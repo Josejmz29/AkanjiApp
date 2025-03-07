@@ -1,0 +1,6 @@
+@AkanjiApp_HostAddress = http://localhost:5215
+
+GET {{AkanjiApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
