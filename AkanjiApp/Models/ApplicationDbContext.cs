@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace AkanjiApp.Models
 {
-    public class ApplicationDbContext : DbContext
+     public class ApplicationDbContext : IdentityDbContext<Usuario>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -15,8 +16,9 @@ namespace AkanjiApp.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder); // IMPORTANTE: Llamar a base.OnModelCreating()
 
+            modelBuilder.Entity<Usuario>().ToTable("Usuarios");
             // Configuración de la relación muchos a muchos
             modelBuilder.Entity<DocumentoAutor>()
                 .HasKey(da => new { da.DocumentoId, da.AutorId });
