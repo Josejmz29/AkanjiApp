@@ -1,5 +1,6 @@
 using AkanjiApp.Models;
 using AkanjiApp.Repository;
+using AkanjiApp.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
+
+builder.Services.AddHttpClient<DoiService>();
+
 
 builder.Services.AddControllers();
 

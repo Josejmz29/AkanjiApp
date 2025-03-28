@@ -2,21 +2,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AkanjiApp.Models;
+using AkanjiApp.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AkanjiApp.Models
+namespace AkanjiApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentoesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly DoiService _doiService;
 
-        public DocumentoesController(ApplicationDbContext context)
+        public DocumentoesController(ApplicationDbContext context, DoiService doiService)
         {
             _context = context;
+            _doiService = doiService;
         }
 
         // GET: api/Documentoes
@@ -126,6 +130,18 @@ namespace AkanjiApp.Models
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+
+        [HttpGet("/doi/{doi}")]
+        public async Task<IActionResult> ObtenerDocumento(string doi)
+        {
+            var documento = await _doiService.ObtenerDocumentoPorDoiAsync(doi);
+            if (documento == null)
+            {
+                return NotFound("Documento no encontrado");
+            }
+            return Ok(documento);
         }
 
         private bool DocumentoExists(string id)

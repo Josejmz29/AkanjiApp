@@ -1,5 +1,5 @@
 <template>
-  <v-app theme="dark">
+  <v-app theme="dark" class="fill-height">
     <v-container>
       <v-toolbar color="black" density="comfortable">
         <!-- Texto "Akanji" con navegación a Home -->
@@ -15,8 +15,9 @@
         </v-btn>
       </v-toolbar>
 
-      <v-main>
-        <router-view />
+      <v-main class="fill-height">
+        
+        <DOImanager />
       </v-main>
     </v-container>
   </v-app>
@@ -24,6 +25,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import DOImanager from './pages/DOImanager.vue';
 
 const router = useRouter();
 
