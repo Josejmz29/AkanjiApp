@@ -137,10 +137,29 @@ namespace AkanjiApp.Controllers
         public async Task<IActionResult> ObtenerDocumento(string doi)
         {
             var documento = await _doiService.ObtenerDocumentoPorDoiAsync(doi);
+
             if (documento == null)
             {
                 return NotFound("Documento no encontrado");
             }
+
+            try
+            {
+                _context.Documentos.Add(documento);
+                await _context.SaveChangesAsync();
+            }
+            catch(DbUpdateException)
+            {
+                if (DocumentoExists(documento.DOI))
+                {
+                    return Conflict("El DOI ya existe en la base de datos.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+           
             return Ok(documento);
         }
 

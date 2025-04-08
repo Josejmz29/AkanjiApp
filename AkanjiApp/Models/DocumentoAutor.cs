@@ -1,4 +1,6 @@
-﻿namespace AkanjiApp.Models
+﻿using System.Text.Json.Serialization;
+
+namespace AkanjiApp.Models
 {
     public class DocumentoAutor
     {
@@ -7,5 +9,14 @@
 
         public int AutorId { get; set; }
         public Autor Autor { get; set; }
+
+
+
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("affiliation")]
+        public string? Affiliation { get; set; }
     }
 }

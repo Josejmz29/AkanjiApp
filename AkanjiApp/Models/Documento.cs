@@ -1,45 +1,99 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace AkanjiApp.Models
 {
-    public class Documento
-    {
+    
 
-        /*Basic information*/
-        [Key]
-        public string DOI { get; set; }
-        public string? Titulo { get; set; }
-        public Autor? autor { get; set; }
-        public virtual ICollection<DocumentoAutor> Autores { get; set; } = new List<DocumentoAutor>();
-        public string? resourceType { get; set; }
+        public class Documento
+        {
+            /* Basic information */
+            [Key]
+            [JsonPropertyName("doi")]
+            public string DOI { get; set; }
 
-        public DateTime? FechaPublicacion { get; set; }
+            [JsonPropertyName("title")]
+            public string? Titulo { get; set; }
 
-        //Alternative title
-        //creator empresa
-        //license
+            [JsonPropertyName("creators")]
+            public virtual ICollection<DocumentoAutor> Autores { get; set; } = new List<DocumentoAutor>();
 
-        public string? description { get; set; }
+            [JsonPropertyName("publication_date")]
+            public DateTime? FechaPublicacion { get; set; }
 
-        /*Recomended information*/
-        public virtual IList<Autor>? contributors { get; set; } = new List<Autor>();
-        public string? keywords { get; set; }
-        public string? language { get; set; }
-        //dates
+            [JsonPropertyName("resource_type_general")]
+            public string? ResourceType { get; set; }
 
-        public string? version { get; set; }
-        public string? publisher { get; set; }
-        /*funding*/
-        /*Alternate identifiers*/
-        /*realted works*/
-        /*references*/
-        /*software*/
-        /*publishsing info*/
-        /*conference*/
-        /*domain specific fields*/
+            [JsonPropertyName("description")]
+            public string? Description { get; set; }
 
+            /* Recommended information */
+            [JsonPropertyName("contributors")]
+            public virtual IList<Autor>? Contributors { get; set; } = new List<Autor>();
 
+            [JsonPropertyName("keywords")]
+            public string? Keywords { get; set; }
 
+            [JsonPropertyName("language")]
+            public string? Language { get; set; }
 
+            [JsonPropertyName("version")]
+            public string? Version { get; set; }
+
+            [JsonPropertyName("publisher")]
+            public string? Publisher { get; set; }
+
+            [JsonPropertyName("related_identifiers")]
+            public List<RelatedIdentifier>? RelatedIdentifiers { get; set; }
+
+            [JsonPropertyName("rights_list")]
+            public List<LicenciaDerechos>? RightsList { get; set; }
+
+            [JsonPropertyName("subjects")]
+            public List<Subject>? Subjects { get; set; }
+
+            [JsonPropertyName("alternate_identifiers")]
+            public List<AlternateIdentifier>? AlternateIdentifiers { get; set; }
+        }
+
+    
+
+       
+
+        public class RelatedIdentifier
+        {
+            [Key]
+            [JsonPropertyName("identifier")]
+            public string Identifier { get; set; }
+
+            [JsonPropertyName("relation_type")]
+            public string RelationType { get; set; }
+
+            [JsonPropertyName("resource_type_general")]
+            public string? ResourceTypeGeneral { get; set; }
+        }
+
+        public class LicenciaDerechos
+        {
+            [JsonPropertyName("rights")]
+            public string Rights { get; set; }
+
+            [JsonPropertyName("rightsUri")]
+            public string? RightsUri { get; set; }
+        }
+
+        public class Subject
+        {
+            [JsonPropertyName("subject")]
+            public string Text { get; set; }
+        }
+
+        public class AlternateIdentifier
+        {
+            [JsonPropertyName("alternate_identifier")]
+            public string Identifier { get; set; }
+
+            [JsonPropertyName("alternate_identifier_type")]
+            public string Type { get; set; }
+        }
     }
-}

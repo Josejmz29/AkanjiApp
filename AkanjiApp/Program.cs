@@ -37,12 +37,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddHttpClient<DoiService>();
-
+builder.Services.AddHttpClient<PdfService>();
+builder.Services.AddHttpClient<ZenodoService>();
 
 builder.Services.AddControllers();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

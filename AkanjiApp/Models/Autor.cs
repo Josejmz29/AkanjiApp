@@ -1,8 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace AkanjiApp.Models
 {
-    public class Autor
+   public class Autor
     {
         [Key]
         public int Id { get; set; } // Clave primaria
@@ -15,5 +16,14 @@ namespace AkanjiApp.Models
         public string? Tipo { get; set;}
 
         public virtual ICollection<DocumentoAutor> DocumentoAutores { get; set; } = new List<DocumentoAutor>();
-    }
+
+
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("affiliation")]
+        public string? Affiliation { get; set; }
+    
+}
 }

@@ -19,9 +19,14 @@ namespace AkanjiApp.Models
             base.OnModelCreating(modelBuilder); // IMPORTANTE: Llamar a base.OnModelCreating()
 
             modelBuilder.Entity<Usuario>().ToTable("Usuarios");
+
+            modelBuilder.Entity<AlternateIdentifier>().HasNoKey();
+            modelBuilder.Entity<LicenciaDerechos>().HasNoKey();
+            modelBuilder.Entity<Subject>().HasNoKey();
             // Configuración de la relación muchos a muchos
             modelBuilder.Entity<DocumentoAutor>()
                 .HasKey(da => new { da.DocumentoId, da.AutorId });
+
 
             modelBuilder.Entity<DocumentoAutor>()
                 .HasOne(da => da.Documento)
