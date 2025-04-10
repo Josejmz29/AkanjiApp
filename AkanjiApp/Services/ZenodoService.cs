@@ -61,11 +61,11 @@
         public async Task AgregarMetadatosAsync(string depositoId, Documento documento)
         {
             var validCreators = documento.Autores
-        .Where(a => !string.IsNullOrWhiteSpace(a.Autor.Nombre) && !string.IsNullOrWhiteSpace(a.Autor.Apellido))
+        .Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Apellido))
         .Select(a => {
             var creator = new Dictionary<string, object>
             {
-                { "name", $"{a.Autor.Nombre} {a.Autor.Apellido}" }
+                { "name", $"{a.Name} {a.Apellido}" }
             };
             // Solo incluir ORCID si es válido
            /* if (!string.IsNullOrWhiteSpace(a.Autor.ORCID) && IsValidOrcid(a.Autor.ORCID))

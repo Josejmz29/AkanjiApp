@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace AkanjiApp.Migrations
 {
     /// <inheritdoc />
-    public partial class InitIdentity : Migration
+    public partial class Inicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,6 +27,26 @@ namespace AkanjiApp.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Documentos",
+                columns: table => new
+                {
+                    DOI = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Titulo = table.Column<string>(type: "longtext", nullable: true),
+                    FechaPublicacion = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ResourceType = table.Column<string>(type: "longtext", nullable: true),
+                    Description = table.Column<string>(type: "longtext", nullable: true),
+                    Keywords = table.Column<string>(type: "longtext", nullable: true),
+                    Language = table.Column<string>(type: "longtext", nullable: true),
+                    Version = table.Column<string>(type: "longtext", nullable: true),
+                    Publisher = table.Column<string>(type: "longtext", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Documentos", x => x.DOI);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -75,6 +95,122 @@ namespace AkanjiApp.Migrations
                         column: x => x.RoleId,
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AlternateIdentifier",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Identifier = table.Column<string>(type: "longtext", nullable: false),
+                    Type = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AlternateIdentifier", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AlternateIdentifier_Documentos_DocumentoDOI",
+                        column: x => x.DocumentoDOI,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "DocumentoAutores",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: true),
+                    Apellido = table.Column<string>(type: "longtext", nullable: true),
+                    Affiliation = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoId = table.Column<string>(type: "varchar(255)", nullable: true),
+                    ORCID = table.Column<string>(type: "longtext", nullable: true),
+                    Role = table.Column<string>(type: "longtext", nullable: true),
+                    Tipo = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentoAutores", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentoAutores_Documentos_DocumentoDOI",
+                        column: x => x.DocumentoDOI,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI");
+                    table.ForeignKey(
+                        name: "FK_DocumentoAutores_Documentos_DocumentoId",
+                        column: x => x.DocumentoId,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI");
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "LicenciaDerechos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Rights = table.Column<string>(type: "longtext", nullable: true),
+                    RightsUri = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LicenciaDerechos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LicenciaDerechos_Documentos_DocumentoDOI",
+                        column: x => x.DocumentoDOI,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "RelatedIdentifier",
+                columns: table => new
+                {
+                    Identifier = table.Column<string>(type: "varchar(255)", nullable: false),
+                    RelationType = table.Column<string>(type: "longtext", nullable: false),
+                    ResourceTypeGeneral = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RelatedIdentifier", x => x.Identifier);
+                    table.ForeignKey(
+                        name: "FK_RelatedIdentifier_Documentos_DocumentoDOI",
+                        column: x => x.DocumentoDOI,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI");
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Subject",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Text = table.Column<string>(type: "longtext", nullable: true),
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Subject", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Subject_Documentos_DocumentoDOI",
+                        column: x => x.DocumentoDOI,
+                        principalTable: "Documentos",
+                        principalColumn: "DOI",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
@@ -168,76 +304,10 @@ namespace AkanjiApp.Migrations
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
-            migrationBuilder.CreateTable(
-                name: "Autores",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Nombre = table.Column<string>(type: "longtext", nullable: true),
-                    Apellido = table.Column<string>(type: "longtext", nullable: true),
-                    ORCID = table.Column<string>(type: "longtext", nullable: true),
-                    Afiliacion = table.Column<string>(type: "longtext", nullable: true),
-                    Role = table.Column<string>(type: "longtext", nullable: true),
-                    Tipo = table.Column<string>(type: "longtext", nullable: true),
-                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Autores", x => x.Id);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "Documentos",
-                columns: table => new
-                {
-                    DOI = table.Column<string>(type: "varchar(255)", nullable: false),
-                    Titulo = table.Column<string>(type: "longtext", nullable: true),
-                    autorId = table.Column<int>(type: "int", nullable: true),
-                    resourceType = table.Column<string>(type: "longtext", nullable: true),
-                    FechaPublicacion = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    description = table.Column<string>(type: "longtext", nullable: true),
-                    keywords = table.Column<string>(type: "longtext", nullable: true),
-                    language = table.Column<string>(type: "longtext", nullable: true),
-                    version = table.Column<string>(type: "longtext", nullable: true),
-                    publisher = table.Column<string>(type: "longtext", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Documentos", x => x.DOI);
-                    table.ForeignKey(
-                        name: "FK_Documentos_Autores_autorId",
-                        column: x => x.autorId,
-                        principalTable: "Autores",
-                        principalColumn: "Id");
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "DocumentoAutores",
-                columns: table => new
-                {
-                    DocumentoId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    AutorId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DocumentoAutores", x => new { x.DocumentoId, x.AutorId });
-                    table.ForeignKey(
-                        name: "FK_DocumentoAutores_Autores_AutorId",
-                        column: x => x.AutorId,
-                        principalTable: "Autores",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_DocumentoAutores_Documentos_DocumentoId",
-                        column: x => x.DocumentoId,
-                        principalTable: "Documentos",
-                        principalColumn: "DOI",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
+            migrationBuilder.CreateIndex(
+                name: "IX_AlternateIdentifier_DocumentoDOI",
+                table: "AlternateIdentifier",
+                column: "DocumentoDOI");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -266,19 +336,29 @@ namespace AkanjiApp.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Autores_DocumentoDOI",
-                table: "Autores",
+                name: "IX_DocumentoAutores_DocumentoDOI",
+                table: "DocumentoAutores",
                 column: "DocumentoDOI");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DocumentoAutores_AutorId",
+                name: "IX_DocumentoAutores_DocumentoId",
                 table: "DocumentoAutores",
-                column: "AutorId");
+                column: "DocumentoId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Documentos_autorId",
-                table: "Documentos",
-                column: "autorId");
+                name: "IX_LicenciaDerechos_DocumentoDOI",
+                table: "LicenciaDerechos",
+                column: "DocumentoDOI");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RelatedIdentifier_DocumentoDOI",
+                table: "RelatedIdentifier",
+                column: "DocumentoDOI");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Subject_DocumentoDOI",
+                table: "Subject",
+                column: "DocumentoDOI");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
@@ -290,21 +370,13 @@ namespace AkanjiApp.Migrations
                 table: "Usuarios",
                 column: "NormalizedUserName",
                 unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Autores_Documentos_DocumentoDOI",
-                table: "Autores",
-                column: "DocumentoDOI",
-                principalTable: "Documentos",
-                principalColumn: "DOI");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Autores_Documentos_DocumentoDOI",
-                table: "Autores");
+            migrationBuilder.DropTable(
+                name: "AlternateIdentifier");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
@@ -325,6 +397,15 @@ namespace AkanjiApp.Migrations
                 name: "DocumentoAutores");
 
             migrationBuilder.DropTable(
+                name: "LicenciaDerechos");
+
+            migrationBuilder.DropTable(
+                name: "RelatedIdentifier");
+
+            migrationBuilder.DropTable(
+                name: "Subject");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -332,9 +413,6 @@ namespace AkanjiApp.Migrations
 
             migrationBuilder.DropTable(
                 name: "Documentos");
-
-            migrationBuilder.DropTable(
-                name: "Autores");
         }
     }
 }

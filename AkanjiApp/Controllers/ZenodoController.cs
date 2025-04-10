@@ -1,7 +1,9 @@
 ﻿using AkanjiApp.Models;
 using AkanjiApp.Models.DTO;
+using AkanjiApp.Repository;
 using AkanjiApp.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AkanjiApp.Controllers
 {
@@ -12,6 +14,7 @@ namespace AkanjiApp.Controllers
     {
 
         private readonly ZenodoService _zenodoService;
+        private readonly DocumentRepository _docRepository;
         private readonly PdfService _pdfService;
 
         public ZenodoController(ZenodoService zenodoService, PdfService pdfService)
@@ -30,29 +33,38 @@ namespace AkanjiApp.Controllers
                 return BadRequest("Los metadatos del documento son obligatorios.");
 
             // Construir el objeto Documento con la información del DTO
-            Documento documento = new Documento
-            {
-                DOI = "", // No tenemos DOI en este flujo
-                Titulo = dto.Titulo,
-               // description = dto.Descripcion,
-               // keywords = dto.Keywords,
-             //   language = dto.Language,
-              //  FechaPublicacion = DateTime.TryParse(dto.FechaPublicacion, out var fecha) ? fecha : null,
-              //  publisher = dto.Publisher,
-                Autores = new List<DocumentoAutor>
-        {
-            new DocumentoAutor
-            {
-                Autor = new Autor
-                {
-                    Nombre = dto.AutorNombre,
-                    Apellido = dto.AutorApellido,
-                    ORCID = dto.AutorORCID
-                }
-            }
-        }
-            };
 
+            Documento documento = dto.ToEntity();
+            
+
+            string depositoId = await _zenodoService.CrearDepositoAsync();
+            await _zenodoService.AgregarMetadatosAsync(depositoId, documento);
+            await _zenodoService.SubirArchivoAsync(depositoId, file);
+            await _zenodoService.PublicarDepositoAsync(depositoId);
+
+            return Ok(new { message = "Documento subido y publicado en Zenodo.", depositoId });
+        }
+
+
+        [HttpPost("subirDOi")]
+        public async Task<IActionResult> SubirDocumento([FromForm] IFormFile file, [FromForm] string doi)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Por favor, sube un archivo PDF.");
+
+            if (string.IsNullOrWhiteSpace(doi))
+                return BadRequest("El DOI del documento es obligatorio.");
+
+            // Buscar el documento en base de datos (ajusta si usas repositorio)
+            var documento = await _docRepository
+                .GetByDoiAsync(doi);
+
+            
+
+            if (documento == null)
+                return NotFound($"No se encontró un documento con DOI: {doi}");
+
+            // Crear depósito y subir a Zenodo
             string depositoId = await _zenodoService.CrearDepositoAsync();
             await _zenodoService.AgregarMetadatosAsync(depositoId, documento);
             await _zenodoService.SubirArchivoAsync(depositoId, file);

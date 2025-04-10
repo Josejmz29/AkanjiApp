@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace AkanjiApp.Models
@@ -29,7 +30,7 @@ namespace AkanjiApp.Models
 
             /* Recommended information */
             [JsonPropertyName("contributors")]
-            public virtual IList<Autor>? Contributors { get; set; } = new List<Autor>();
+            public virtual IList<DocumentoAutor>? Contributors { get; set; } = new List<DocumentoAutor>();
 
             [JsonPropertyName("keywords")]
             public string? Keywords { get; set; }
@@ -73,27 +74,32 @@ namespace AkanjiApp.Models
             public string? ResourceTypeGeneral { get; set; }
         }
 
-        public class LicenciaDerechos
+    [Owned]
+    public class LicenciaDerechos
         {
             [JsonPropertyName("rights")]
-            public string Rights { get; set; }
+            public string? Rights { get; set; }
 
             [JsonPropertyName("rightsUri")]
             public string? RightsUri { get; set; }
         }
 
+
+    [Owned]
         public class Subject
         {
             [JsonPropertyName("subject")]
-            public string Text { get; set; }
+            public string? Text { get; set; }
         }
 
-        public class AlternateIdentifier
+            [Owned]
+    public class AlternateIdentifier
         {
+            
             [JsonPropertyName("alternate_identifier")]
             public string Identifier { get; set; }
 
             [JsonPropertyName("alternate_identifier_type")]
-            public string Type { get; set; }
+            public string? Type { get; set; }
         }
     }

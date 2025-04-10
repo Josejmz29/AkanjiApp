@@ -2,7 +2,7 @@
 
 namespace AkanjiApp.Repository
 {
-    public class AutorRepository: Repository<Autor>, IAutorRepository
+    public class AutorRepository: Repository<DocumentoAutor>, IAutorRepository
     {
         private readonly ApplicationDbContext _context;
 

@@ -2,7 +2,7 @@
 
 namespace AkanjiApp.Repository
 {
-    public interface IAutorRepository: IRepository<Autor>
+    public interface IAutorRepository: IRepository<DocumentoAutor>
     {
     }
 }

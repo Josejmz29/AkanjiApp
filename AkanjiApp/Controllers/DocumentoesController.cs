@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AkanjiApp.Models;
+using AkanjiApp.Repository;
 using AkanjiApp.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +16,14 @@ namespace AkanjiApp.Controllers
     public class DocumentoesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly DocumentRepository _docRepository;
         private readonly DoiService _doiService;
 
-        public DocumentoesController(ApplicationDbContext context, DoiService doiService)
+        public DocumentoesController(ApplicationDbContext context, DoiService doiService, DocumentRepository docRepository)
         {
             _context = context;
             _doiService = doiService;
+            _docRepository = docRepository;
         }
 
         // GET: api/Documentoes
@@ -139,29 +142,40 @@ namespace AkanjiApp.Controllers
             var documento = await _doiService.ObtenerDocumentoPorDoiAsync(doi);
 
             if (documento == null)
+                return NotFound("Documento no encontrado.");
+
+            // Buscar en la base de datos usando el repositorio
+            var existente = await _docRepository.GetByDoiAsync(doi);
+
+            if (existente != null)
             {
-                return NotFound("Documento no encontrado");
+                /*
+                // Actualizar propiedades principales
+                _context.Entry(existente).CurrentValues.SetValues(documento);
+
+                // Reemplazar relaciones (opcional: podrías limpiar o comparar primero si necesitas control fino)
+                existente.Autores = documento.Autores;
+                existente.Contributors = documento.Contributors;
+                existente.RelatedIdentifiers = documento.RelatedIdentifiers;
+                existente.RightsList = documento.RightsList;
+                existente.Subjects = documento.Subjects;
+                existente.AlternateIdentifiers = documento.AlternateIdentifiers;*/
+
+               await _docRepository.Update(documento);
+                
+            }
+            else
+            {
+                await _docRepository.Add(documento);
             }
 
-            try
-            {
-                _context.Documentos.Add(documento);
-                await _context.SaveChangesAsync();
-            }
-            catch(DbUpdateException)
-            {
-                if (DocumentoExists(documento.DOI))
-                {
-                    return Conflict("El DOI ya existe en la base de datos.");
-                }
-                else
-                {
-                    throw;
-                }
-            }
-           
+
+
+            await _docRepository.Save(); // si tienes un método SaveAsync, si no, usa _context.SaveChangesAsync()
+
             return Ok(documento);
         }
+
 
         private bool DocumentoExists(string id)
         {

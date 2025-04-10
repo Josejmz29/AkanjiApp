@@ -19,14 +19,58 @@ namespace AkanjiApp.Migrations
                 .HasAnnotation("ProductVersion", "7.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("AkanjiApp.Models.Autor", b =>
+            modelBuilder.Entity("AkanjiApp.Models.Documento", b =>
+                {
+                    b.Property<string>("DOI")
+                        .HasColumnType("varchar(255)")
+                        .HasAnnotation("Relational:JsonPropertyName", "doi");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "description");
+
+                    b.Property<DateTime?>("FechaPublicacion")
+                        .HasColumnType("datetime(6)")
+                        .HasAnnotation("Relational:JsonPropertyName", "publication_date");
+
+                    b.Property<string>("Keywords")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "keywords");
+
+                    b.Property<string>("Language")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "language");
+
+                    b.Property<string>("Publisher")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "publisher");
+
+                    b.Property<string>("ResourceType")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "resource_type_general");
+
+                    b.Property<string>("Titulo")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "title");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "version");
+
+                    b.HasKey("DOI");
+
+                    b.ToTable("Documentos");
+                });
+
+            modelBuilder.Entity("AkanjiApp.Models.DocumentoAutor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("Afiliacion")
-                        .HasColumnType("longtext");
+                    b.Property<string>("Affiliation")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "affiliation");
 
                     b.Property<string>("Apellido")
                         .HasColumnType("longtext");
@@ -34,8 +78,12 @@ namespace AkanjiApp.Migrations
                     b.Property<string>("DocumentoDOI")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("Nombre")
-                        .HasColumnType("longtext");
+                    b.Property<string>("DocumentoId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "name");
 
                     b.Property<string>("ORCID")
                         .HasColumnType("longtext");
@@ -50,61 +98,38 @@ namespace AkanjiApp.Migrations
 
                     b.HasIndex("DocumentoDOI");
 
-                    b.ToTable("Autores");
-                });
-
-            modelBuilder.Entity("AkanjiApp.Models.Documento", b =>
-                {
-                    b.Property<string>("DOI")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime?>("FechaPublicacion")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Titulo")
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("autorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("description")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("keywords")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("language")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("publisher")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("resourceType")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("version")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("DOI");
-
-                    b.HasIndex("autorId");
-
-                    b.ToTable("Documentos");
-                });
-
-            modelBuilder.Entity("AkanjiApp.Models.DocumentoAutor", b =>
-                {
-                    b.Property<string>("DocumentoId")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<int>("AutorId")
-                        .HasColumnType("int");
-
-                    b.HasKey("DocumentoId", "AutorId");
-
-                    b.HasIndex("AutorId");
+                    b.HasIndex("DocumentoId");
 
                     b.ToTable("DocumentoAutores");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "contributors");
+                });
+
+            modelBuilder.Entity("AkanjiApp.Models.RelatedIdentifier", b =>
+                {
+                    b.Property<string>("Identifier")
+                        .HasColumnType("varchar(255)")
+                        .HasAnnotation("Relational:JsonPropertyName", "identifier");
+
+                    b.Property<string>("DocumentoDOI")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("RelationType")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "relation_type");
+
+                    b.Property<string>("ResourceTypeGeneral")
+                        .HasColumnType("longtext")
+                        .HasAnnotation("Relational:JsonPropertyName", "resource_type_general");
+
+                    b.HasKey("Identifier");
+
+                    b.HasIndex("DocumentoDOI");
+
+                    b.ToTable("RelatedIdentifier");
+
+                    b.HasAnnotation("Relational:JsonPropertyName", "related_identifiers");
                 });
 
             modelBuilder.Entity("AkanjiApp.Models.Usuario", b =>
@@ -303,39 +328,120 @@ namespace AkanjiApp.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("AkanjiApp.Models.Autor", b =>
-                {
-                    b.HasOne("AkanjiApp.Models.Documento", null)
-                        .WithMany("contributors")
-                        .HasForeignKey("DocumentoDOI");
-                });
-
             modelBuilder.Entity("AkanjiApp.Models.Documento", b =>
                 {
-                    b.HasOne("AkanjiApp.Models.Autor", "autor")
-                        .WithMany()
-                        .HasForeignKey("autorId");
+                    b.OwnsMany("AkanjiApp.Models.AlternateIdentifier", "AlternateIdentifiers", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
 
-                    b.Navigation("autor");
+                            b1.Property<string>("DocumentoDOI")
+                                .IsRequired()
+                                .HasColumnType("varchar(255)");
+
+                            b1.Property<string>("Identifier")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "alternate_identifier");
+
+                            b1.Property<string>("Type")
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "alternate_identifier_type");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("DocumentoDOI");
+
+                            b1.ToTable("AlternateIdentifier");
+
+                            b1.HasAnnotation("Relational:JsonPropertyName", "alternate_identifiers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentoDOI");
+                        });
+
+                    b.OwnsMany("AkanjiApp.Models.LicenciaDerechos", "RightsList", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("DocumentoDOI")
+                                .IsRequired()
+                                .HasColumnType("varchar(255)");
+
+                            b1.Property<string>("Rights")
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "rights");
+
+                            b1.Property<string>("RightsUri")
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "rightsUri");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("DocumentoDOI");
+
+                            b1.ToTable("LicenciaDerechos");
+
+                            b1.HasAnnotation("Relational:JsonPropertyName", "rights_list");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentoDOI");
+                        });
+
+                    b.OwnsMany("AkanjiApp.Models.Subject", "Subjects", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("DocumentoDOI")
+                                .IsRequired()
+                                .HasColumnType("varchar(255)");
+
+                            b1.Property<string>("Text")
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "subject");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("DocumentoDOI");
+
+                            b1.ToTable("Subject");
+
+                            b1.HasAnnotation("Relational:JsonPropertyName", "subjects");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentoDOI");
+                        });
+
+                    b.Navigation("AlternateIdentifiers");
+
+                    b.Navigation("RightsList");
+
+                    b.Navigation("Subjects");
                 });
 
             modelBuilder.Entity("AkanjiApp.Models.DocumentoAutor", b =>
                 {
-                    b.HasOne("AkanjiApp.Models.Autor", "Autor")
-                        .WithMany("DocumentoAutores")
-                        .HasForeignKey("AutorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("AkanjiApp.Models.Documento", null)
+                        .WithMany("Contributors")
+                        .HasForeignKey("DocumentoDOI");
 
                     b.HasOne("AkanjiApp.Models.Documento", "Documento")
                         .WithMany("Autores")
-                        .HasForeignKey("DocumentoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Autor");
+                        .HasForeignKey("DocumentoId");
 
                     b.Navigation("Documento");
+                });
+
+            modelBuilder.Entity("AkanjiApp.Models.RelatedIdentifier", b =>
+                {
+                    b.HasOne("AkanjiApp.Models.Documento", null)
+                        .WithMany("RelatedIdentifiers")
+                        .HasForeignKey("DocumentoDOI");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -389,16 +495,13 @@ namespace AkanjiApp.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AkanjiApp.Models.Autor", b =>
-                {
-                    b.Navigation("DocumentoAutores");
-                });
-
             modelBuilder.Entity("AkanjiApp.Models.Documento", b =>
                 {
                     b.Navigation("Autores");
 
-                    b.Navigation("contributors");
+                    b.Navigation("Contributors");
+
+                    b.Navigation("RelatedIdentifiers");
                 });
 #pragma warning restore 612, 618
         }

@@ -12,11 +12,18 @@ namespace AkanjiApp.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<Documento>> GetByTituloAsync(string titulo)
+       
+
+        public async Task<Documento> GetByDoiAsync(string doi)
         {
             return await _context.Documentos
-                .Where(d => d.Titulo.Contains(titulo))
-                .ToListAsync();
+                .Include(d => d.Autores)
+                .Include(d => d.Contributors)
+                .Include(d => d.RelatedIdentifiers)
+                .Include(d => d.RightsList)
+                .Include(d => d.Subjects)
+                .Include(d => d.AlternateIdentifiers)
+                .FirstOrDefaultAsync(d => d.DOI == doi);
         }
     }
 }

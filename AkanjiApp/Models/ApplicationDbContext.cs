@@ -11,7 +11,7 @@ namespace AkanjiApp.Models
         }
 
         public DbSet<Documento> Documentos { get; set; }
-        public DbSet<Autor> Autores { get; set; }
+        
         public DbSet<DocumentoAutor> DocumentoAutores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,23 +20,39 @@ namespace AkanjiApp.Models
 
             modelBuilder.Entity<Usuario>().ToTable("Usuarios");
 
-            modelBuilder.Entity<AlternateIdentifier>().HasNoKey();
-            modelBuilder.Entity<LicenciaDerechos>().HasNoKey();
-            modelBuilder.Entity<Subject>().HasNoKey();
+
+            modelBuilder.Entity<Documento>()
+    .OwnsMany(d => d.RightsList, r =>
+    {
+        r.WithOwner().HasForeignKey("DocumentoDOI");
+        r.Property<int>("Id");
+        r.HasKey("Id");
+    });
+            modelBuilder.Entity<Documento>()
+    .OwnsMany(d => d.AlternateIdentifiers, a =>
+    {
+        a.WithOwner().HasForeignKey("DocumentoDOI");
+        a.Property<int>("Id");
+        a.HasKey("Id");
+    });
+
+            modelBuilder.Entity<Documento>()
+    .OwnsMany(d => d.Subjects, s =>
+    {
+        s.WithOwner().HasForeignKey("DocumentoDOI");
+        s.Property<int>("Id");
+        s.HasKey("Id");
+    });
+
+
             // Configuración de la relación muchos a muchos
             modelBuilder.Entity<DocumentoAutor>()
-                .HasKey(da => new { da.DocumentoId, da.AutorId });
-
+     .HasKey(da => da.Id);
 
             modelBuilder.Entity<DocumentoAutor>()
                 .HasOne(da => da.Documento)
                 .WithMany(d => d.Autores)
                 .HasForeignKey(da => da.DocumentoId);
-
-            modelBuilder.Entity<DocumentoAutor>()
-                .HasOne(da => da.Autor)
-                .WithMany(a => a.DocumentoAutores)
-                .HasForeignKey(da => da.AutorId);
         }
     }
     

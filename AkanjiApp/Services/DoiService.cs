@@ -74,14 +74,15 @@ namespace AkanjiApp.Services
 
                     autores.Add(new DocumentoAutor
                     {
-                        Name = $"{nombre} {apellido}",
+                        Name = $"{nombre}",
+                        Apellido = apellido,
                         Affiliation = afiliacion
                     });
                 }
             }
 
             // Contributors (si existen)
-            List<Autor> contributors = new();
+            List<DocumentoAutor> contributors = new();
             if (root.TryGetProperty("editor", out var editors) && editors.ValueKind == JsonValueKind.Array)
             {
                 foreach (JsonElement editor in editors.EnumerateArray())
@@ -92,9 +93,10 @@ namespace AkanjiApp.Services
                         ? affiliations[0].GetProperty("name").GetString()
                         : null;
 
-                    contributors.Add(new Autor
+                    contributors.Add(new DocumentoAutor
                     {
-                        Name = $"{nombre} {apellido}",
+                        Name = $"{nombre}",
+                        Apellido = apellido,
                         Affiliation = afiliacion
                     });
                 }
