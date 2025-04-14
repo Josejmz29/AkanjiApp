@@ -14,13 +14,14 @@ namespace AkanjiApp.Controllers
     {
 
         private readonly ZenodoService _zenodoService;
-        private readonly DocumentRepository _docRepository;
+        private readonly IDocumentRepository _docRepository;
         private readonly PdfService _pdfService;
 
-        public ZenodoController(ZenodoService zenodoService, PdfService pdfService)
+        public ZenodoController(ZenodoService zenodoService, PdfService pdfService, IDocumentRepository docRepository)
         {
             _zenodoService = zenodoService;
             _pdfService = pdfService;
+            _docRepository = docRepository;
         }
 
         [HttpPost("subir")]
@@ -47,6 +48,7 @@ namespace AkanjiApp.Controllers
 
 
         [HttpPost("subirDOi")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> SubirDocumento([FromForm] IFormFile file, [FromForm] string doi)
         {
             if (file == null || file.Length == 0)
@@ -55,23 +57,38 @@ namespace AkanjiApp.Controllers
             if (string.IsNullOrWhiteSpace(doi))
                 return BadRequest("El DOI del documento es obligatorio.");
 
-            // Buscar el documento en base de datos (ajusta si usas repositorio)
-            var documento = await _docRepository
-                .GetByDoiAsync(doi);
+            try
+            {
+                string decodedDoi = Uri.UnescapeDataString(doi);
+                var documento = await _docRepository.GetByDoiAsync(decodedDoi);
 
-            
+                if (documento == null)
+                    return NotFound($"No se encontró un documento con DOI: {decodedDoi}");
 
-            if (documento == null)
-                return NotFound($"No se encontró un documento con DOI: {doi}");
+                string depositoId = await _zenodoService.CrearDepositoAsync();
+                await _zenodoService.AgregarMetadatosAsync(depositoId, documento);
+                await _zenodoService.SubirArchivoAsync(depositoId, file);
+                await _zenodoService.PublicarDepositoAsync(depositoId);
 
-            // Crear depósito y subir a Zenodo
-            string depositoId = await _zenodoService.CrearDepositoAsync();
-            await _zenodoService.AgregarMetadatosAsync(depositoId, documento);
-            await _zenodoService.SubirArchivoAsync(depositoId, file);
-            await _zenodoService.PublicarDepositoAsync(depositoId);
+                return Ok(new { message = "Documento subido y publicado en Zenodo.", depositoId });
+            }
+            catch (HttpRequestException httpEx)
+            {
+                // Intenta extraer respuesta de error detallada si está disponible
+                if (httpEx.Data.Contains("ZenodoResponse"))
+                {
+                    var zenodoError = httpEx.Data["ZenodoResponse"]?.ToString();
+                    return StatusCode(400, $"❌ Error de la API de Zenodo: {zenodoError}");
+                }
 
-            return Ok(new { message = "Documento subido y publicado en Zenodo.", depositoId });
+                return StatusCode(500, $"❌ Error al comunicarse con Zenodo: {httpEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Error interno: {ex.Message}");
+            }
         }
+
 
         [HttpPost("prueba")]
         public async Task<IActionResult> Prueba()

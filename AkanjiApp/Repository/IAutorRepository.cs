@@ -4,5 +4,7 @@ namespace AkanjiApp.Repository
 {
     public interface IAutorRepository: IRepository<DocumentoAutor>
     {
+
+
     }
 }

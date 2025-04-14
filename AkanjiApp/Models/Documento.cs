@@ -55,15 +55,31 @@ namespace AkanjiApp.Models
 
             [JsonPropertyName("alternate_identifiers")]
             public List<AlternateIdentifier>? AlternateIdentifiers { get; set; }
+
+        public void ActualizarDesde(Documento nuevo)
+        {
+            // Si quieres reemplazar relaciones también:
+           
+
+            Autores = nuevo.Autores;
+            Contributors = nuevo.Contributors;
+            RelatedIdentifiers = nuevo.RelatedIdentifiers;
+
+            RightsList = nuevo.RightsList;
+            Subjects = nuevo.Subjects;
+            AlternateIdentifiers = nuevo.AlternateIdentifiers;
+
         }
 
-    
+    }
 
-       
 
-        public class RelatedIdentifier
+
+
+
+    public class RelatedIdentifier
         {
-            [Key]
+            
             [JsonPropertyName("identifier")]
             public string Identifier { get; set; }
 

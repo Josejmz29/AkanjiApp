@@ -178,19 +178,22 @@ namespace AkanjiApp.Migrations
                 name: "RelatedIdentifier",
                 columns: table => new
                 {
-                    Identifier = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Identifier = table.Column<string>(type: "longtext", nullable: false),
                     RelationType = table.Column<string>(type: "longtext", nullable: false),
                     ResourceTypeGeneral = table.Column<string>(type: "longtext", nullable: true),
-                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: true)
+                    DocumentoDOI = table.Column<string>(type: "varchar(255)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RelatedIdentifier", x => x.Identifier);
+                    table.PrimaryKey("PK_RelatedIdentifier", x => x.Id);
                     table.ForeignKey(
                         name: "FK_RelatedIdentifier_Documentos_DocumentoDOI",
                         column: x => x.DocumentoDOI,
                         principalTable: "Documentos",
-                        principalColumn: "DOI");
+                        principalColumn: "DOI",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 

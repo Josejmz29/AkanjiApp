@@ -16,10 +16,10 @@ namespace AkanjiApp.Controllers
     public class DocumentoesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly DocumentRepository _docRepository;
+        private readonly IDocumentRepository _docRepository;
         private readonly DoiService _doiService;
 
-        public DocumentoesController(ApplicationDbContext context, DoiService doiService, DocumentRepository docRepository)
+        public DocumentoesController(ApplicationDbContext context, DoiService doiService, IDocumentRepository docRepository)
         {
             _context = context;
             _doiService = doiService;
@@ -139,40 +139,27 @@ namespace AkanjiApp.Controllers
         [HttpGet("/doi/{doi}")]
         public async Task<IActionResult> ObtenerDocumento(string doi)
         {
-            var documento = await _doiService.ObtenerDocumentoPorDoiAsync(doi);
+            string decodedDoi = Uri.UnescapeDataString(doi); // <-- Decodificamos aquí
 
+            var documento = await _doiService.ObtenerDocumentoPorDoiAsync(decodedDoi);
             if (documento == null)
                 return NotFound("Documento no encontrado.");
 
-            // Buscar en la base de datos usando el repositorio
-            var existente = await _docRepository.GetByDoiAsync(doi);
+            var existente = await _docRepository.GetByDoiAsync(decodedDoi);
 
             if (existente != null)
             {
-                /*
-                // Actualizar propiedades principales
                 _context.Entry(existente).CurrentValues.SetValues(documento);
 
-                // Reemplazar relaciones (opcional: podrías limpiar o comparar primero si necesitas control fino)
-                existente.Autores = documento.Autores;
-                existente.Contributors = documento.Contributors;
-                existente.RelatedIdentifiers = documento.RelatedIdentifiers;
-                existente.RightsList = documento.RightsList;
-                existente.Subjects = documento.Subjects;
-                existente.AlternateIdentifiers = documento.AlternateIdentifiers;*/
-
-               await _docRepository.Update(documento);
-                
+                existente.ActualizarDesde(documento);
+                await _docRepository.Update(existente);
             }
             else
             {
                 await _docRepository.Add(documento);
             }
 
-
-
-            await _docRepository.Save(); // si tienes un método SaveAsync, si no, usa _context.SaveChangesAsync()
-
+            await _docRepository.Save();
             return Ok(documento);
         }
 

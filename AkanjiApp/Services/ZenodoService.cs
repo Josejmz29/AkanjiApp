@@ -60,45 +60,105 @@
         /// </summary>
         public async Task AgregarMetadatosAsync(string depositoId, Documento documento)
         {
+            // Validar autores
             var validCreators = documento.Autores
-        .Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Apellido))
-        .Select(a => {
-            var creator = new Dictionary<string, object>
-            {
-                { "name", $"{a.Name} {a.Apellido}" }
-            };
-            // Solo incluir ORCID si es válido
-           /* if (!string.IsNullOrWhiteSpace(a.Autor.ORCID) && IsValidOrcid(a.Autor.ORCID))
-            {
-                creator.Add("orcid", a.Autor.ORCID);
-            }*/
-            return creator;
-        })
-        .ToArray();
+                .Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Apellido))
+                .Select(a => new Dictionary<string, object>
+                {
+            { "name", $"{a.Name} {a.Apellido}" }
+                    // Incluir ORCID si está disponible y es válido
+                    // { "orcid", a.ORCID }
+                })
+                .ToArray();
 
-            if (validCreators.Length == 0)
-            {
-                Console.WriteLine("❌ No hay autores válidos.");
+            if (!validCreators.Any())
                 throw new InvalidOperationException("Debe haber al menos un autor con nombre y apellido.");
-            }
 
+            // Preparar campos opcionales con valores predeterminados
+            var keywords = string.IsNullOrWhiteSpace(documento.Keywords)
+                ? new[] { "sin-palabras-clave" }
+                : documento.Keywords.Split(',').Select(k => k.Trim()).ToArray();
+
+            var language = string.IsNullOrWhiteSpace(documento.Language) ? "en" : documento.Language;
+
+            var publicationDate = documento.FechaPublicacion?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
+
+            var description = string.IsNullOrWhiteSpace(documento.Description) ? "Sin descripción disponible." : documento.Description;
+
+            var journalTitle = string.IsNullOrWhiteSpace(documento.Publisher) ? "Sin revista" : documento.Publisher;
+
+            var subjects = documento.Subjects?
+                .Where(s => !string.IsNullOrWhiteSpace(s.Text))
+                .Select(s => new { subject = s.Text })
+                .ToArray();
+
+            var rightsList = documento.RightsList?
+                .Where(r => !string.IsNullOrWhiteSpace(r.Rights))
+                .Select(r => new
+                {
+                    rights = r.Rights,
+                    rights_uri = r.RightsUri
+                })
+                .ToArray();
+
+            var relatedIdentifiers = documento.RelatedIdentifiers?
+                .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
+                .Select(r => new
+                {
+                    identifier = r.Identifier,
+                    relation_type = r.RelationType,
+                    resource_type = r.ResourceTypeGeneral
+                })
+                .ToArray();
+
+            var alternateIdentifiers = documento.AlternateIdentifiers?
+                .Where(a => !string.IsNullOrWhiteSpace(a.Identifier))
+                .Select(a => new
+                {
+                    alternate_identifier = a.Identifier,
+                    alternate_identifier_type = a.Type ?? "doi"
+                })
+                .ToArray();
+
+            var contributors = documento.Contributors?
+                .Where(c => !string.IsNullOrWhiteSpace(c.Name) && !string.IsNullOrWhiteSpace(c.Apellido))
+                .Select(c => new
+                {
+                    name = $"{c.Name} {c.Apellido}"
+                    // Incluir roles si están disponibles
+                    // role = c.Role
+                })
+                .ToArray();
+
+            var version = string.IsNullOrWhiteSpace(documento.Version) ? "1.0" : documento.Version;
+
+            // Construir el objeto de metadatos
             var metadata = new
             {
                 metadata = new
                 {
-                   /* title = documento.Titulo,
+                    title = documento.Titulo ?? "Título no disponible",
                     upload_type = "publication",
                     publication_type = "article",
-                    description = documento.description,
+                    description,
                     creators = validCreators,
-                    keywords = documento.keywords?.Split(',').Select(k => k.Trim()).ToArray(),
-                    language = documento.language,
-                    publication_date = documento.FechaPublicacion?.ToString("yyyy-MM-dd"),
-                    journal_title = documento.publisher*/
+                    keywords,
+                    language,
+                    publication_date = publicationDate,
+                    journal_title = journalTitle,
+                    version,
+                    contributors,
+                    rights_list = rightsList,
+                    related_identifiers = relatedIdentifiers,
+                    alternate_identifiers = alternateIdentifiers,
+                    subjects
                 }
             };
 
-            var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+
+
+
+           var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
             Console.WriteLine("📦 Metadata JSON:\n" + json);
 
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
@@ -116,6 +176,23 @@
             }
 
             Console.WriteLine($"✅ Metadatos agregados correctamente al depósito {depositoId}");
+
+
+            // Serializar y enviar a Zenodo
+           /* var json = JsonSerializer.Serialize(metadata);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync($"https://zenodo.org/api/deposit/depositions/{depositoId}", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var exception = new HttpRequestException($"Error al agregar metadatos: {response.StatusCode}");
+                exception.Data["ZenodoResponse"] = responseContent;
+                throw exception;
+            }*/
+
+
         }
 
         private bool IsValidOrcid(string orcid)

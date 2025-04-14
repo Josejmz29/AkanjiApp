@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AkanjiApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250410173547_Inicial")]
+    [Migration("20250413212313_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -106,33 +106,6 @@ namespace AkanjiApp.Migrations
                     b.ToTable("DocumentoAutores");
 
                     b.HasAnnotation("Relational:JsonPropertyName", "contributors");
-                });
-
-            modelBuilder.Entity("AkanjiApp.Models.RelatedIdentifier", b =>
-                {
-                    b.Property<string>("Identifier")
-                        .HasColumnType("varchar(255)")
-                        .HasAnnotation("Relational:JsonPropertyName", "identifier");
-
-                    b.Property<string>("DocumentoDOI")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("RelationType")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasAnnotation("Relational:JsonPropertyName", "relation_type");
-
-                    b.Property<string>("ResourceTypeGeneral")
-                        .HasColumnType("longtext")
-                        .HasAnnotation("Relational:JsonPropertyName", "resource_type_general");
-
-                    b.HasKey("Identifier");
-
-                    b.HasIndex("DocumentoDOI");
-
-                    b.ToTable("RelatedIdentifier");
-
-                    b.HasAnnotation("Relational:JsonPropertyName", "related_identifiers");
                 });
 
             modelBuilder.Entity("AkanjiApp.Models.Usuario", b =>
@@ -394,6 +367,42 @@ namespace AkanjiApp.Migrations
                                 .HasForeignKey("DocumentoDOI");
                         });
 
+                    b.OwnsMany("AkanjiApp.Models.RelatedIdentifier", "RelatedIdentifiers", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            b1.Property<string>("DocumentoDOI")
+                                .IsRequired()
+                                .HasColumnType("varchar(255)");
+
+                            b1.Property<string>("Identifier")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "identifier");
+
+                            b1.Property<string>("RelationType")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "relation_type");
+
+                            b1.Property<string>("ResourceTypeGeneral")
+                                .HasColumnType("longtext")
+                                .HasAnnotation("Relational:JsonPropertyName", "resource_type_general");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("DocumentoDOI");
+
+                            b1.ToTable("RelatedIdentifier");
+
+                            b1.HasAnnotation("Relational:JsonPropertyName", "related_identifiers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DocumentoDOI");
+                        });
+
                     b.OwnsMany("AkanjiApp.Models.Subject", "Subjects", b1 =>
                         {
                             b1.Property<int>("Id")
@@ -422,6 +431,8 @@ namespace AkanjiApp.Migrations
 
                     b.Navigation("AlternateIdentifiers");
 
+                    b.Navigation("RelatedIdentifiers");
+
                     b.Navigation("RightsList");
 
                     b.Navigation("Subjects");
@@ -438,13 +449,6 @@ namespace AkanjiApp.Migrations
                         .HasForeignKey("DocumentoId");
 
                     b.Navigation("Documento");
-                });
-
-            modelBuilder.Entity("AkanjiApp.Models.RelatedIdentifier", b =>
-                {
-                    b.HasOne("AkanjiApp.Models.Documento", null)
-                        .WithMany("RelatedIdentifiers")
-                        .HasForeignKey("DocumentoDOI");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -503,8 +507,6 @@ namespace AkanjiApp.Migrations
                     b.Navigation("Autores");
 
                     b.Navigation("Contributors");
-
-                    b.Navigation("RelatedIdentifiers");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,3 +1,4 @@
+using AkanjiApp.Controllers;
 using AkanjiApp.Models;
 using AkanjiApp.Repository;
 using AkanjiApp.Services;
@@ -48,7 +49,13 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "AkanjiApp", Version = "v1" });
+
+    // Esto es necesario para que Swagger entienda los formularios con archivos
+    c.OperationFilter<FileUploadOperationFilter>();
+});
 
 var app = builder.Build();
 

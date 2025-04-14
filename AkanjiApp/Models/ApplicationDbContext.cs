@@ -44,6 +44,13 @@ namespace AkanjiApp.Models
         s.HasKey("Id");
     });
 
+            modelBuilder.Entity<Documento>().OwnsMany(d => d.RelatedIdentifiers, r =>
+            {
+                r.WithOwner().HasForeignKey("DocumentoDOI");
+                r.Property<int>("Id");
+                r.HasKey("Id");
+            });
+
 
             // Configuración de la relación muchos a muchos
             modelBuilder.Entity<DocumentoAutor>()
