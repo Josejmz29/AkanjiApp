@@ -1,23 +1,15 @@
 <template>
   <v-app theme="dark" class="fill-height">
-    <v-container>
-      <v-toolbar color="black" density="comfortable">
-        <!-- Texto "Akanji" con navegación a Home -->
-        <v-app-bar-title class="cursor-pointer" @click="goToHome">
-          Akanji
-        </v-app-bar-title>
 
-        <v-spacer></v-spacer>
+     <!-- Navbar dinámica -->
+    <NavbarGuest v-if="showNavbar && !isLoggedIn" />
+    <NavbarUser v-if="showNavbar && isLoggedIn" />
 
-        <!-- Botón de Login con navegación -->
-        <v-btn color="primary" variant="outlined" @click="goToLogin">
-          Login
-        </v-btn>
-      </v-toolbar>
-
+    
+    <v-container fluid class="fill-height d-flex ">
       <v-main class="fill-height">
         
-        <DOImanager />
+        <router-view class="fill-height" />
       </v-main>
     </v-container>
   </v-app>
@@ -26,16 +18,22 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import DOImanager from './pages/DOImanager.vue';
+import { useUserStore } from '@/stores/user';
+import NavbarGuest from './components/NavbarGuest.vue';
+import NavbarUser from './components/NavbarUser.vue';
+
+const userStore = useUserStore();
+const route = useRoute();
+
+const hideNavbarOnRoutes = ['/login', '/register'];
+
+const showNavbar = computed(() => !hideNavbarOnRoutes.includes(route.path));
+const isLoggedIn = computed(() => userStore.isLoggedIn);
+
 
 const router = useRouter();
 
-const goToHome = () => {
-  router.push('/'); // Redirige a Home
-};
 
-const goToLogin = () => {
-  router.push('/login'); // Redirige a Login
-};
 </script>
 
 <style scoped>

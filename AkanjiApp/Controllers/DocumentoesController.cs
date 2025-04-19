@@ -136,8 +136,8 @@ namespace AkanjiApp.Controllers
         }
 
 
-        [HttpGet("/doi/{doi}")]
-        public async Task<IActionResult> ObtenerDocumento(string doi)
+        [HttpGet("/doi")]
+        public async Task<IActionResult> ObtenerDocumento([FromQuery] string doi)
         {
             string decodedDoi = Uri.UnescapeDataString(doi); // <-- Decodificamos aquí
 

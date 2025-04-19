@@ -1,5 +1,17 @@
 <template>
-    <v-container class="fill-height d-flex justify-center align-center">
+    <v-toolbar color="black" class="mb-5">
+  <v-app-bar-title
+    @click="goHome"
+    class="cursor-pointer mr-4 font-weight-bold"
+    style="font-size: 24px; color: white; text-transform: uppercase;"
+  >
+    Akanji
+  </v-app-bar-title>
+
+  
+</v-toolbar>
+    <v-container class="fill-height d-flex justify-center align-center mt-6">
+        
         <v-card class="pa-6" width="650">
             <v-card-title class="text-h5 text-center">Iniciar sesión</v-card-title>
 
@@ -38,15 +50,23 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+
 
 const router = useRouter();
 const email = ref('');
 const password = ref('');
 
+const userStore = useUserStore();
+
 const handleLogin = () => {
-    console.log('Iniciando sesión con:', email.value, password.value);
-    // Aquí iría la lógica de autenticación con API o Firebase
+  userStore.login();
+  router.push('/DOImanager'); // o donde necesites
 };
+
+const goHome = () => router.push('/');
+
+
 
 const loginWithGithub = () => {
     console.log('Iniciar sesión con GitHub');
