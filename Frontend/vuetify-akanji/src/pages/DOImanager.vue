@@ -34,7 +34,7 @@
               <v-card class="pa-6" width="950" style="overflow-y: auto;">
                 <v-card-title class="text-h5">Datos del Documento</v-card-title>
                 <v-card-text>
-                  
+
                   <v-text-field v-model="documento.title" label="Título" outlined class="mb-4" />
 
                   <v-textarea v-model="documento.description" label="Descripción" outlined class="mb-4" />
@@ -89,6 +89,11 @@
                         Subir documento a
                         Zenodo</v-btn>
 
+                      <v-btn class="px-3 mx-6" color="green" @click="subirBorrador"
+                        :disabled="!uploadStore.uploadResponse">
+                        Subir documento a
+                        Zenodo (Borrador) </v-btn>
+
                       <v-btn class="px-3 mx-6" color="primary" @click="volver" width="90">Volver</v-btn>
                     </v-row>
                     <v-row>
@@ -114,7 +119,7 @@
       <v-window-item :value="3">
         <v-container>
 
-          <v-row class="d-flex justify-center align-center " >
+          <v-row class="d-flex justify-center align-center ">
             <v-col class="d-flex justify-center align-center flex-column">
               <h1 class="text-h4 mb-4">✅ Documento subido con éxito a Zenodo</h1>
               <v-btn color="primary" class="mt-6" @click="volver">Volver al inicio</v-btn>
@@ -134,6 +139,7 @@
 import { ref } from 'vue'
 import { obtenerPorDoi } from '@/api/api.js'
 import { subirDocumentoPorDoi } from '@/api/api.js'
+import { subirDocumentoPorDoiBorrador } from '@/api/api.js'
 import { useDocumentoDOIStore } from '@/stores/documentoDOI'
 import { useUploadStore } from '@/stores/upload';
 
@@ -146,7 +152,7 @@ const documentoDOIStore = useDocumentoDOIStore()
 
 const doi = ref('')
 const error = ref(null)
-const vistaActual = ref(2)
+const vistaActual = ref(1)
 const documento = ref({})
 
 const subidaExitosa = ref(null);
@@ -166,6 +172,31 @@ const subir = async () => {
     if (!file || !doi) throw new Error('Archivo o DOI no definidos.')
 
     const response = await subirDocumentoPorDoi(file, doi)
+
+    subidaExitosa.value = true
+    console.log('Respuesta subida:', response)
+
+    vistaActual.value = 3
+
+    // Reinicia todo tras 5 segundos con recarga
+    setTimeout(() => {
+      window.location.reload()
+    }, 5000)
+
+  } catch (error) {
+    subidaExitosa.value = false
+    console.error('Error al subir el documento:', error)
+  }
+}
+
+const subirBorrador = async () => {
+  try {
+    const file = uploadStore.uploadResponse
+    const doi = documentoDOIStore.documento.doi
+
+    if (!file || !doi) throw new Error('Archivo o DOI no definidos.')
+
+    const response = await subirDocumentoPorDoiBorrador(file, doi)
 
     subidaExitosa.value = true
     console.log('Respuesta subida:', response)

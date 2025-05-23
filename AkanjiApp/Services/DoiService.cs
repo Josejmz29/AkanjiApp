@@ -3,19 +3,19 @@ using System.Text.Json;
 using System.Net.Http;
 
 using System.Threading.Tasks;
-
+using System.Text.RegularExpressions;
 
 namespace AkanjiApp.Services
 {
     public class DoiService
     {
         private readonly HttpClient _httpClient;
-        
+
 
         public DoiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            
+
         }
 
         public async Task<Documento?> ObtenerDocumentoPorDoiAsync(string doi)
@@ -23,26 +23,49 @@ namespace AkanjiApp.Services
             string url = $"https://api.crossref.org/works/{doi}";
 
             HttpResponseMessage response = await _httpClient.GetAsync(url);
-            
+
             if (!response.IsSuccessStatusCode)
             {
+
+                Console.WriteLine($"❌ Error al acceder a CrossRef: {response.StatusCode}");
                 return null; // O manejar error
             }
-            /*
-             10.1103/PhysRevLett.116.061102
-             */
+
             string json = await response.Content.ReadAsStringAsync();
             Console.WriteLine(json);
-            var documento = ParsearJsonADocumento(json);
+
+
+            var urlOA = $"https://api.openaire.eu/search/publications?doi={Uri.EscapeDataString(doi)}&format=json";
+
+            var responseOA = await _httpClient.GetAsync(urlOA);
+
+            if (!responseOA.IsSuccessStatusCode)
+            {
+
+                Console.WriteLine($"❌ Error al acceder a OpenAIRE: {responseOA.StatusCode}");
+                return null; // O manejar error
+            }
+
+            var jsonOA = await responseOA.Content.ReadAsStringAsync();
+            Console.WriteLine(jsonOA);
+
+
+            var documento = ParsearJsonADocumento(json, jsonOA);
             return documento;
         }
 
-        private Documento ParsearJsonADocumento(string json)
+
+
+
+        private Documento ParsearJsonADocumento(string json, string jsonOA)
         {
             Console.WriteLine(json);
 
             using JsonDocument doc = JsonDocument.Parse(json);
             JsonElement root = doc.RootElement.GetProperty("message");
+
+            using JsonDocument docOA = JsonDocument.Parse(jsonOA);
+            var rootOA = docOA.RootElement;
 
             // Obtener fecha de publicación desde varias fuentes
             DateTime? fechaPublicacion = null;
@@ -102,26 +125,37 @@ namespace AkanjiApp.Services
                 }
             }
 
-            // Keywords
-            string keywords = null;
-            if (root.TryGetProperty("subject", out var subjectArray) && subjectArray.ValueKind == JsonValueKind.Array)
-            {
-                var keywordsList = subjectArray.EnumerateArray().Select(s => s.GetString());
-                keywords = string.Join(", ", keywordsList);
-            }
 
-            // Subjects
-            List<Subject> subjects = new();
-            if (root.TryGetProperty("subject", out var subjectsArray) && subjectsArray.ValueKind == JsonValueKind.Array)
+
+            List<Subject> openAireSubjects = new();
+            if (rootOA.TryGetProperty("response", out var response) &&
+        response.TryGetProperty("results", out var results) &&
+        results.TryGetProperty("result", out var resultArray) &&
+        resultArray.ValueKind == JsonValueKind.Array && resultArray.GetArrayLength() > 0)
             {
-                foreach (var s in subjectsArray.EnumerateArray())
+                var firstResult = resultArray[0];
+
+                if (firstResult.TryGetProperty("metadata", out var metadata) &&
+                    metadata.TryGetProperty("oaf:entity", out var entity) &&
+                    entity.TryGetProperty("oaf:result", out var oafResult) &&
+                    oafResult.TryGetProperty("subject", out var subjectsEl) &&
+                    subjectsEl.ValueKind == JsonValueKind.Array)
                 {
-                    subjects.Add(new Subject
+                    foreach (var subj in subjectsEl.EnumerateArray())
                     {
-                        Text = s.GetString()
-                    });
+                        if (subj.TryGetProperty("$", out var textProp))
+                        {
+                            var text = textProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                                openAireSubjects.Add(new Subject { Text = text });
+                        }
+                    }
                 }
             }
+
+
+
+
 
             // Rights
             List<LicenciaDerechos> rightsList = new();
@@ -174,24 +208,48 @@ namespace AkanjiApp.Services
                 DOI = root.GetProperty("DOI").GetString(),
                 Titulo = root.GetProperty("title")[0].GetString(),
                 FechaPublicacion = fechaPublicacion,
-                Description = root.TryGetProperty("abstract", out var abstractText) ? abstractText.GetString() : null,
+                Description = root.TryGetProperty("abstract", out var abstractText)
+                ? ExtraerDescripcionDesdeAbstract(abstractText.GetString()) : null,
                 Publisher = root.GetProperty("publisher").GetString(),
                 Language = root.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                 ResourceType = root.TryGetProperty("type", out var type) ? type.GetString() : null,
-                Version = root.TryGetProperty("version", out var version) ? version.GetString() : null,
-                Keywords = keywords,
+                Version = root.TryGetProperty("message-version", out var version) ? version.GetString() : null,
+                Keywords = null,
                 Autores = autores,
                 Contributors = contributors,
                 RightsList = rightsList,
                 RelatedIdentifiers = related,
-                Subjects = subjects,
+                Subjects = openAireSubjects,
                 AlternateIdentifiers = alternateIdentifiers
             };
 
-            
+
 
             return documento;
         }
+
+        //++++++++++++++++++Auxiliares++++++++++++++++++++++++++++++++
+
+        private string ExtraerDescripcionDesdeAbstract(string rawAbstract)
+        {
+            if (string.IsNullOrWhiteSpace(rawAbstract))
+                return null;
+
+            // Intenta extraer solo el primer párrafo del abstract
+            var match = Regex.Match(rawAbstract, @"<jats:p>(.*?)<\/jats:p>", RegexOptions.Singleline);
+
+            var contenido = match.Success ? match.Groups[1].Value : rawAbstract;
+
+            // Elimina cualquier etiqueta <jats:*>
+            contenido = Regex.Replace(contenido, @"<\/?jats:[^>]+>", "", RegexOptions.IgnoreCase);
+
+            // Limpia otras etiquetas HTML/XML residuales si las hubiera
+            contenido = Regex.Replace(contenido, @"<\/?[^>]+>", "", RegexOptions.IgnoreCase);
+
+            return contenido.Trim();
+        }
+
+
 
 
     }

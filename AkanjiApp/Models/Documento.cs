@@ -78,17 +78,23 @@ namespace AkanjiApp.Models
 
 
     public class RelatedIdentifier
-        {
-            
-            [JsonPropertyName("identifier")]
-            public string Identifier { get; set; }
+    {
 
-            [JsonPropertyName("relation_type")]
-            public string RelationType { get; set; }
+        [JsonPropertyName("identifier")]
+        public string Identifier { get; set; }
 
-            [JsonPropertyName("resource_type_general")]
-            public string? ResourceTypeGeneral { get; set; }
-        }
+        [JsonPropertyName("relation_type")]
+        public string RelationType { get; set; }
+
+        [JsonPropertyName("resource_type_general")]
+        public string? ResourceTypeGeneral { get; set; }
+
+       // public string? DoiAssertedBy { get; set; }
+
+       // public string? Autor { get; set; }
+
+      //  public string? Title { get; set; }
+    }
 
     [Owned]
     public class LicenciaDerechos

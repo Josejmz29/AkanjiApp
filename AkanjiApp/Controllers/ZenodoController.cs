@@ -185,6 +185,48 @@ namespace AkanjiApp.Controllers
             }
         }
 
+        [HttpPost("subirDOi-borrador")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> SubirBorrador([FromForm] IFormFile file, [FromForm] string doi)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Por favor, sube un archivo PDF.");
+
+            if (string.IsNullOrWhiteSpace(doi))
+                return BadRequest("El DOI del documento es obligatorio.");
+
+            try
+            {
+                string decodedDoi = Uri.UnescapeDataString(doi);
+                var documento = await _docRepository.GetByDoiAsync(decodedDoi);
+
+                if (documento == null)
+                    return NotFound($"No se encontró un documento con DOI: {decodedDoi}");
+
+                string depositoId = await _zenodoService.CrearDepositoAsync();
+                await _zenodoService.AgregarMetadatosAsync(depositoId, documento);
+                await _zenodoService.SubirArchivoAsync(depositoId, file);
+                
+
+                return Ok(new { message = "Documento subido y publicado en Zenodo.", depositoId });
+            }
+            catch (HttpRequestException httpEx)
+            {
+                // Intenta extraer respuesta de error detallada si está disponible
+                if (httpEx.Data.Contains("ZenodoResponse"))
+                {
+                    var zenodoError = httpEx.Data["ZenodoResponse"]?.ToString();
+                    return StatusCode(400, $"❌ Error de la API de Zenodo: {zenodoError}");
+                }
+
+                return StatusCode(500, $"❌ Error al comunicarse con Zenodo: {httpEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Error interno: {ex.Message}");
+            }
+        }
+
 
         [HttpPost("prueba")]
         public async Task<IActionResult> Prueba()

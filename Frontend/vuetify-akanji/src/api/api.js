@@ -1,22 +1,22 @@
 // src/api/api.js
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: 'http://localhost:5215',
+  baseURL: "http://localhost:5215",
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 function handleError(error) {
   if (error.response) {
-    console.error('Error response:', error.response);
+    console.error("Error response:", error.response);
     return error.response.data || { message: error.message };
   } else if (error.request) {
-    console.error('Error request:', error.request);
-    return { message: 'No se pudo conectar con el servidor' };
+    console.error("Error request:", error.request);
+    return { message: "No se pudo conectar con el servidor" };
   } else {
-    console.error('General error:', error.message);
+    console.error("General error:", error.message);
     return { message: error.message };
   }
 }
@@ -24,7 +24,7 @@ function handleError(error) {
 // Documentos CRUD
 export const getDocumentos = async () => {
   try {
-    const res = await api.get('/Documentoes');
+    const res = await api.get("/Documentoes");
     return res.data;
   } catch (error) {
     throw handleError(error);
@@ -42,7 +42,7 @@ export const getDocumentoById = async (id) => {
 
 export const createDocumento = async (documento) => {
   try {
-    const res = await api.post('/Documentoes', documento);
+    const res = await api.post("/Documentoes", documento);
     return res.data;
   } catch (error) {
     throw handleError(error);
@@ -69,7 +69,7 @@ export const obtenerPorDoi = async (doi) => {
   try {
     const sanitizedDoi = doi.trim();
 
-const res = await api.get('/doi', { params: { doi } });
+    const res = await api.get("/doi", { params: { doi } });
 
     return res.data;
   } catch (error) {
@@ -80,14 +80,17 @@ const res = await api.get('/doi', { params: { doi } });
 // Zenodo
 export const subirDocumentoConMetadata = async (file, dto) => {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('dto', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
+  formData.append("file", file);
+  formData.append(
+    "dto",
+    new Blob([JSON.stringify(dto)], { type: "application/json" })
+  );
 
   try {
-    const res = await api.post('/api/zenodo/subir', formData, {
+    const res = await api.post("/api/zenodo/subir", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   } catch (error) {
@@ -97,14 +100,14 @@ export const subirDocumentoConMetadata = async (file, dto) => {
 
 export const subirDocumentoPorDoi = async (file, doi) => {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('doi', doi);
+  formData.append("file", file);
+  formData.append("doi", doi);
 
   try {
-    const res = await api.post('/api/zenodo/subirDOi', formData, {
+    const res = await api.post("/api/zenodo/subirDOi", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   } catch (error) {
@@ -112,4 +115,19 @@ export const subirDocumentoPorDoi = async (file, doi) => {
   }
 };
 
+export const subirDocumentoPorDoiBorrador = async (file, doi) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("doi", doi);
 
+  try {
+    const res = await api.post("/api/zenodo/subirDOi-borrador", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
