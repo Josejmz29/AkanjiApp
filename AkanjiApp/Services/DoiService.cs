@@ -128,6 +128,7 @@ namespace AkanjiApp.Services
 
 
             List<Subject> openAireSubjects = new();
+            List<String> keywords = new();
             if (rootOA.TryGetProperty("response", out var response) &&
         response.TryGetProperty("results", out var results) &&
         results.TryGetProperty("result", out var resultArray) &&
@@ -148,6 +149,7 @@ namespace AkanjiApp.Services
                             var text = textProp.GetString();
                             if (!string.IsNullOrWhiteSpace(text))
                                 openAireSubjects.Add(new Subject { Text = text });
+                                keywords.Add(text);
                         }
                     }
                 }
@@ -209,7 +211,7 @@ namespace AkanjiApp.Services
                 Titulo = root.GetProperty("title")[0].GetString(),
                 FechaPublicacion = fechaPublicacion,
                 Description = root.TryGetProperty("abstract", out var abstractText)
-                ? ExtraerDescripcionDesdeAbstract(abstractText.GetString()) : null,
+                ? ExtraerDescripcionDesdeAbstract(abstractText.GetString()) : "sin descripcion disponible",
                 Publisher = root.GetProperty("publisher").GetString(),
                 Language = root.TryGetProperty("language", out var lang) ? lang.GetString() : null,
                 ResourceType = root.TryGetProperty("type", out var type) ? type.GetString() : null,

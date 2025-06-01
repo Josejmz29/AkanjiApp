@@ -79,6 +79,8 @@
                 ? new[] { "sin-palabras-clave" }
                 : documento.Keywords.Split(',').Select(k => k.Trim()).ToArray();
 
+            
+
             var language = string.IsNullOrWhiteSpace(documento.Language) ? "en" : documento.Language;
 
             var publicationDate = documento.FechaPublicacion?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
@@ -101,7 +103,7 @@
                 })
                 .ToArray();
 
-            var relatedIdentifiers = documento.RelatedIdentifiers?
+            /*var relatedIdentifiers = documento.RelatedIdentifiers?
                 .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
                 .Select(r => new
                 {
@@ -109,7 +111,19 @@
                     relation_type = r.RelationType,
                     resource_type = r.ResourceTypeGeneral
                 })
-                .ToArray();
+                .ToArray();*/
+
+
+           var relatedIdentifiers = documento.RelatedIdentifiers
+            .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
+            .Select(r => new Dictionary<string, object>
+            {
+                { "identifier", r.Identifier },
+                { "relation_type", r.RelationType },
+                // Solo agregar si hay valor
+                { "resource_type", r.ResourceTypeGeneral ?? null }
+            }.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value))
+            .ToList();
 
             var alternateIdentifiers = documento.AlternateIdentifiers?
                 .Where(a => !string.IsNullOrWhiteSpace(a.Identifier))
@@ -193,6 +207,16 @@
             }*/
 
 
+        }
+
+        // --- helpers -------------
+        void AddIfHasContent<T>(IDictionary<string, object> dict, string key, IEnumerable<T>? value)
+        {
+            if (value is not null && value.Any()) dict[key] = value;
+        }
+        void AddIfNotNull(IDictionary<string, object> dict, string key, object? value)
+        {
+            if (value is not null) dict[key] = value;
         }
 
         private bool IsValidOrcid(string orcid)
