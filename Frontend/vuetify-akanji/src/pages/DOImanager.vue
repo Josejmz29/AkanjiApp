@@ -179,9 +179,7 @@ const subir = async () => {
     vistaActual.value = 3
 
     // Reinicia todo tras 5 segundos con recarga
-    setTimeout(() => {
-      window.location.reload()
-    }, 5000)
+    setTimeout(() => { window.location.reload() }, 5000)
 
   } catch (error) {
     subidaExitosa.value = false
@@ -204,9 +202,7 @@ const subirBorrador = async () => {
     vistaActual.value = 3
 
     // Reinicia todo tras 5 segundos con recarga
-    setTimeout(() => {
-      window.location.reload()
-    }, 5000)
+    //setTimeout(() => { window.location.reload() }, 5000)
 
   } catch (error) {
     subidaExitosa.value = false

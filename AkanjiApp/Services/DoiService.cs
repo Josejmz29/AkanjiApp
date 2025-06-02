@@ -54,8 +54,48 @@ namespace AkanjiApp.Services
             return documento;
         }
 
+        //++++++++++++++++++++  +++++++++++++++++++++++++++++
+        public List<Dictionary<string, object>> ParseGrantsFromCrossref(JsonElement root)
+        {
+            List<Dictionary<string, object>> grants = new();
 
+            if (root.TryGetProperty("funder", out JsonElement funders) && funders.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var funder in funders.EnumerateArray())
+                {
+                    string funderName = funder.GetProperty("name").GetString() ?? "";
+                    string? funderDOI = funder.TryGetProperty("DOI", out var doiEl) ? doiEl.GetString() : null;
 
+                    if (funder.TryGetProperty("award", out JsonElement awards) && awards.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var award in awards.EnumerateArray())
+                        {
+                            string grantNumber = award.GetString() ?? "";
+
+                            var grant = new Dictionary<string, object>
+                            {
+                                ["grant_number"] = grantNumber,
+                                ["funder"] = new Dictionary<string, object>
+                                {
+                                    ["name"] = funderName
+                                }
+                            };
+
+                            if (!string.IsNullOrWhiteSpace(funderDOI))
+                            {
+                                ((Dictionary<string, object>)grant["funder"])["identifier"] = funderDOI;
+                                ((Dictionary<string, object>)grant["funder"])["scheme"] = "fundref";
+                            }
+
+                            grants.Add(grant);
+                        }
+                    }
+                }
+            }
+
+            return grants;
+        }
+        //+++++++++++++++++++++++++++++
 
         private Documento ParsearJsonADocumento(string json, string jsonOA)
         {
@@ -204,6 +244,34 @@ namespace AkanjiApp.Services
                 }
             }
 
+            //Funders and Grants
+            var funders = new List<Funder>();
+
+            
+
+            if (root.TryGetProperty("funder", out var funderArray) && funderArray.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var funderJson in funderArray.EnumerateArray())
+                {
+                    string name = funderJson.GetProperty("name").GetString();
+                    string identifier = funderJson.TryGetProperty("DOI", out var doi) ? doi.GetString() : null;
+
+                    if (funderJson.TryGetProperty("award", out var awards) && awards.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var award in awards.EnumerateArray())
+                        {
+                            funders.Add(new Funder
+                            {
+                                Name = name,
+                                Identifier = identifier,
+                                GrantNumber = award.GetString(),
+                                Scheme = "fundref"
+                            });
+                        }
+                    }
+                }
+            }
+
             // Crear el objeto Documento
             var documento = new Documento
             {
@@ -222,7 +290,8 @@ namespace AkanjiApp.Services
                 RightsList = rightsList,
                 RelatedIdentifiers = related,
                 Subjects = openAireSubjects,
-                AlternateIdentifiers = alternateIdentifiers
+                AlternateIdentifiers = alternateIdentifiers,
+                Funders = funders
             };
 
 

@@ -58,156 +58,175 @@
         /// <summary>
         /// Añade metadatos al depósito.
         /// </summary>
+       
+
         public async Task AgregarMetadatosAsync(string depositoId, Documento documento)
         {
-            // Validar autores
-            var validCreators = documento.Autores
+
+            // ---------- 2.  Creadores ----------
+            var creators = documento.Autores
                 .Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Apellido))
-                .Select(a => new Dictionary<string, object>
-                {
-            { "name", $"{a.Name} {a.Apellido}" }
-                    // Incluir ORCID si está disponible y es válido
-                    // { "orcid", a.ORCID }
-                })
+                .Select(a => new { name = $"{a.Name} {a.Apellido}" })
                 .ToArray();
 
-            if (!validCreators.Any())
+            if (!creators.Any())
                 throw new InvalidOperationException("Debe haber al menos un autor con nombre y apellido.");
 
-            // Preparar campos opcionales con valores predeterminados
-            var keywords = string.IsNullOrWhiteSpace(documento.Keywords)
-                ? new[] { "sin-palabras-clave" }
-                : documento.Keywords.Split(',').Select(k => k.Trim()).ToArray();
+            // ---------- 3.  Diccionario base ----------
+
+            var metadataDict = new Dictionary<string, object?>
+            {
+                ["title"] = documento.Titulo ?? "Título no disponible",
+                ["upload_type"] = "publication",
+                ["publication_type"] = "article",
+                ["description"] = string.IsNullOrWhiteSpace(documento.Description) ? "Sin descripción disponible." : documento.Description,
+                ["creators"] = creators,
+                ["language"] = string.IsNullOrWhiteSpace(documento.Language) ? "en" : documento.Language,
+                ["publication_date"] = (documento.FechaPublicacion ?? DateTime.UtcNow).ToString("yyyy-MM-dd"),
+                ["version"] = string.IsNullOrWhiteSpace(documento.Version) ? "1.0" : documento.Version
+            };
 
             
 
-            var language = string.IsNullOrWhiteSpace(documento.Language) ? "en" : documento.Language;
+            // ---------- 4.  DOI (2 vías) ----------
+            // A) Cabecera
+            AddIfNotNull(metadataDict, "doi", documento.DOI);
 
-            var publicationDate = documento.FechaPublicacion?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
 
-            var description = string.IsNullOrWhiteSpace(documento.Description) ? "Sin descripción disponible." : documento.Description;
+            // ---------- 5.  Keywords, subjects, rights ----------
 
-            var journalTitle = string.IsNullOrWhiteSpace(documento.Publisher) ? "Sin revista" : documento.Publisher;
+            if (!string.IsNullOrWhiteSpace(documento.Publisher))
+                metadataDict["journal_title"] = documento.Publisher;
+
+
+
+            var contributors = documento.Contributors?
+                .Where(c => !string.IsNullOrWhiteSpace(c.Name) && !string.IsNullOrWhiteSpace(c.Apellido))
+                .Select(c => new { name = $"{c.Name} {c.Apellido}" })
+                .ToArray();
+
+            if (contributors?.Any() == true)
+                metadataDict["contributors"] = contributors;
+
+            var rights = documento.RightsList?
+                .Where(r => !string.IsNullOrWhiteSpace(r.Rights))
+                .Select(r => new { rights = r.Rights, rights_uri = r.RightsUri })
+                .ToArray();
+
+            if (rights?.Any() == true)
+                metadataDict["rights_list"] = rights;
+
+            var related = documento.RelatedIdentifiers?
+                .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
+                .Select(r =>
+                {
+                    var dict = new Dictionary<string, object>
+                    {
+                        ["identifier"] = r.Identifier!,
+                        ["relation_type"] = r.RelationType!
+                    };
+                    if (!string.IsNullOrWhiteSpace(r.ResourceTypeGeneral))
+                        dict["resource_type"] = r.ResourceTypeGeneral;
+                    return dict;
+                })
+                .ToArray();
+
+           /* if (related?.Any() == true)
+                metadataDict["related_identifiers"] = related;*/
+
+            var altIds = documento.AlternateIdentifiers?
+                .Where(a => !string.IsNullOrWhiteSpace(a.Identifier))
+                .Select(a => new
+                {
+                    alternate_identifier = a.Identifier,
+                    alternate_identifier_type = string.IsNullOrWhiteSpace(a.Type) ? "doi" : a.Type
+                })
+                .ToArray();
+
+           
 
             var subjects = documento.Subjects?
                 .Where(s => !string.IsNullOrWhiteSpace(s.Text))
                 .Select(s => new { subject = s.Text })
                 .ToArray();
 
-            var rightsList = documento.RightsList?
-                .Where(r => !string.IsNullOrWhiteSpace(r.Rights))
-                .Select(r => new
-                {
-                    rights = r.Rights,
-                    rights_uri = r.RightsUri
-                })
-                .ToArray();
-
-            /*var relatedIdentifiers = documento.RelatedIdentifiers?
-                .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
-                .Select(r => new
-                {
-                    identifier = r.Identifier,
-                    relation_type = r.RelationType,
-                    resource_type = r.ResourceTypeGeneral
-                })
-                .ToArray();*/
-
-
-           var relatedIdentifiers = documento.RelatedIdentifiers
-            .Where(r => !string.IsNullOrWhiteSpace(r.Identifier) && !string.IsNullOrWhiteSpace(r.RelationType))
-            .Select(r => new Dictionary<string, object>
+            if (subjects?.Any() == true)
             {
-                { "identifier", r.Identifier },
-                { "relation_type", r.RelationType },
-                // Solo agregar si hay valor
-                { "resource_type", r.ResourceTypeGeneral ?? null }
-            }.Where(kv => kv.Value != null).ToDictionary(kv => kv.Key, kv => kv.Value))
+                metadataDict["subjects"] = subjects;
+
+                // Extraer solo el texto plano para keywords
+                var keywordTexts = subjects.Select(s => s.subject).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+                if (keywordTexts.Any())
+                    metadataDict["keywords"] = keywordTexts;
+
+            }
+
+            // ---------- 6.  Financiadores ----------
+           var grants = documento.Funders?
+            .Where(f => !string.IsNullOrWhiteSpace(f.Name) && !string.IsNullOrWhiteSpace(f.GrantNumber))
+            .Select(f => new Dictionary<string, object>
+            {
+                ["funder"] = new Dictionary<string, object>
+                {
+                    ["name"] = f.Name,
+                    ["identifier"] = f.Identifier,
+                    ["scheme"] = f.Scheme ?? "fundref"
+                },
+                ["grant_number"] = f.GrantNumber
+            })
             .ToList();
 
-            var alternateIdentifiers = documento.AlternateIdentifiers?
-                .Where(a => !string.IsNullOrWhiteSpace(a.Identifier))
-                .Select(a => new
-                {
-                    alternate_identifier = a.Identifier,
-                    alternate_identifier_type = a.Type ?? "doi"
-                })
-                .ToArray();
+            if (grants?.Any() == true)
+                metadataDict["grants"] = grants;
 
-            var contributors = documento.Contributors?
-                .Where(c => !string.IsNullOrWhiteSpace(c.Name) && !string.IsNullOrWhiteSpace(c.Apellido))
-                .Select(c => new
-                {
-                    name = $"{c.Name} {c.Apellido}"
-                    // Incluir roles si están disponibles
-                    // role = c.Role
-                })
-                .ToArray();
-
-            var version = string.IsNullOrWhiteSpace(documento.Version) ? "1.0" : documento.Version;
-
-            // Construir el objeto de metadatos
-            var metadata = new
+            // ---------- 6. Financiadores ----------
+            /*if (documento.Funders != null && documento.Funders.Any())
             {
-                metadata = new
+                var f = documento.Funders
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Name) && !string.IsNullOrWhiteSpace(x.GrantNumber))
+                    .FirstOrDefault();
+
+                if (f != null)
                 {
-                    title = documento.Titulo ?? "Título no disponible",
-                    upload_type = "publication",
-                    publication_type = "article",
-                    description,
-                    creators = validCreators,
-                    keywords,
-                    language,
-                    publication_date = publicationDate,
-                    journal_title = journalTitle,
-                    version,
-                    contributors,
-                    rights_list = rightsList,
-                    related_identifiers = relatedIdentifiers,
-                    alternate_identifiers = alternateIdentifiers,
-                    subjects
+                    var grant = new Dictionary<string, object>
+                    {
+                        ["funder"] = new Dictionary<string, object>
+                        {
+                            ["name"] = f.Name,
+                            ["identifier"] = f.Identifier,
+                            ["scheme"] = f.Scheme ?? "fundref"
+                        },
+                        ["grant_number"] = f.GrantNumber
+                    };
+
+                    metadataDict["grants"] = new[] { grant };
                 }
-            };
+            }*/
 
+            // ---------- 7.  Enviar ----------
+            var metadataPayload = new { metadata = metadataDict };
 
-
-
-           var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
-            Console.WriteLine("📦 Metadata JSON:\n" + json);
-
+            var json = JsonSerializer.Serialize(metadataPayload);
+            
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
             using var content = new ByteArrayContent(jsonBytes);
+            Console.WriteLine("Payload limpio:\n" + JsonSerializer.Serialize(metadataPayload, new JsonSerializerOptions { WriteIndented = true }));
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
             var response = await _httpClient.PutAsync($"{_zenodoApiUrl}/{depositoId}", content);
             var responseBody = await response.Content.ReadAsStringAsync();
 
             Console.WriteLine($"🔁 Respuesta de Zenodo (status {(int)response.StatusCode}):\n{responseBody}");
 
+            
+
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException($"Error {response.StatusCode}: {responseBody}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"Zenodo error: {response.StatusCode} - {errorContent}");
             }
-
             Console.WriteLine($"✅ Metadatos agregados correctamente al depósito {depositoId}");
-
-
-            // Serializar y enviar a Zenodo
-           /* var json = JsonSerializer.Serialize(metadata);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PutAsync($"https://zenodo.org/api/deposit/depositions/{depositoId}", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var exception = new HttpRequestException($"Error al agregar metadatos: {response.StatusCode}");
-                exception.Data["ZenodoResponse"] = responseContent;
-                throw exception;
-            }*/
-
-
         }
+
 
         // --- helpers -------------
         void AddIfHasContent<T>(IDictionary<string, object> dict, string key, IEnumerable<T>? value)

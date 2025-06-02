@@ -56,6 +56,9 @@ namespace AkanjiApp.Models
             [JsonPropertyName("alternate_identifiers")]
             public List<AlternateIdentifier>? AlternateIdentifiers { get; set; }
 
+        [JsonPropertyName("funders")]
+        public List<Funder>? Funders { get; set; } = new();
+
         public void ActualizarDesde(Documento nuevo)
         {
             // Si quieres reemplazar relaciones también:
@@ -66,6 +69,7 @@ namespace AkanjiApp.Models
             RelatedIdentifiers = nuevo.RelatedIdentifiers;
 
             RightsList = nuevo.RightsList;
+            Funders = nuevo.Funders;
             Subjects = nuevo.Subjects;
             AlternateIdentifiers = nuevo.AlternateIdentifiers;
 
@@ -74,7 +78,16 @@ namespace AkanjiApp.Models
     }
 
 
-
+    [Owned]
+    public class Funder
+    {
+        
+        public string Name { get; set; }               // Nombre del financiador (obligatorio)
+        public string Identifier { get; set; }         // DOI del financiador (opcional)
+        public string Scheme { get; set; } = "fundref"; // Esquema de identificación (por defecto: fundref)
+        [JsonPropertyName("grant_number")]
+        public string GrantNumber { get; set; }        // Número del proyecto (award)
+    }
 
 
     public class RelatedIdentifier

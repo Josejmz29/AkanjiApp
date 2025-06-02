@@ -28,6 +28,17 @@ namespace AkanjiApp.Models
         r.Property<int>("Id");
         r.HasKey("Id");
     });
+
+
+            modelBuilder.Entity<Documento>()
+            .OwnsMany(d => d.Funders, f =>
+            {
+                f.WithOwner().HasForeignKey("DocumentoDOI");
+                f.Property<int>("Id"); // EF requiere clave
+                f.HasKey("Id");
+            });
+
+
             modelBuilder.Entity<Documento>()
     .OwnsMany(d => d.AlternateIdentifiers, a =>
     {

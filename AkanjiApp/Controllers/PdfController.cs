@@ -1,4 +1,5 @@
-﻿using AkanjiApp.Services;
+﻿using AkanjiApp.Models;
+using AkanjiApp.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
@@ -30,9 +31,9 @@ namespace AkanjiApp.Controllers
             }
 
             string texto = _pdfService.ExtractText(filePath);
-            string acknowledgement = await _pdfService.FindAcknowledgementAsync(texto); // Esperar el resultado asíncrono
+            List<Funder> funders = await _pdfService.FindAcknowledgementAsync(texto); // Esperar el resultado asíncrono
 
-            return Ok(new { acknowledgement });
+            return Ok(new { funders });
         }
 
     }
