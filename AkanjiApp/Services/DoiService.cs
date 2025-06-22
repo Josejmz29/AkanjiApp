@@ -166,7 +166,8 @@ namespace AkanjiApp.Services
             }
 
 
-
+            string? languageClassId = "";
+            string? resourceTypeClassId = "";
             List<Subject> openAireSubjects = new();
             List<String> keywords = new();
             if (rootOA.TryGetProperty("response", out var response) &&
@@ -192,8 +193,26 @@ namespace AkanjiApp.Services
                                 keywords.Add(text);
                         }
                     }
+
+
+                    if (oafResult.TryGetProperty("language", out var languageEl) &&
+              languageEl.TryGetProperty("@classid", out var langClassIdProp))
+                    {
+                        languageClassId = langClassIdProp.GetString();
+                    }
+
+                    if (oafResult.TryGetProperty("resourcetype", out var resourceTypeEl) &&
+                        resourceTypeEl.TryGetProperty("@classid", out var resTypeClassIdProp))
+                    {
+                        resourceTypeClassId = resTypeClassIdProp.GetString();
+                    }
+
                 }
             }
+
+           
+
+          
 
 
 
@@ -281,8 +300,8 @@ namespace AkanjiApp.Services
                 Description = root.TryGetProperty("abstract", out var abstractText)
                 ? ExtraerDescripcionDesdeAbstract(abstractText.GetString()) : "sin descripcion disponible",
                 Publisher = root.GetProperty("publisher").GetString(),
-                Language = root.TryGetProperty("language", out var lang) ? lang.GetString() : null,
-                ResourceType = root.TryGetProperty("type", out var type) ? type.GetString() : null,
+                Language = languageClassId,
+                ResourceType = resourceTypeClassId,
                 Version = root.TryGetProperty("message-version", out var version) ? version.GetString() : null,
                 Keywords = null,
                 Autores = autores,

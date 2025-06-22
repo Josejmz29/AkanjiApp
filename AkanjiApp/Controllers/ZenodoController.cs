@@ -17,18 +17,20 @@ namespace AkanjiApp.Controllers
         private readonly IDocumentRepository _docRepository;
         private readonly PdfService _pdfService;
         private readonly ApplicationDbContext _context;
+        private readonly ZenodoV2Service _zenodoV2Service;
         private readonly DoiService _doiService;
 
-        public ZenodoController(ZenodoService zenodoService, PdfService pdfService, IDocumentRepository docRepository, ApplicationDbContext context, DoiService doiService)
+        public ZenodoController(ZenodoService zenodoService, PdfService pdfService, IDocumentRepository docRepository, ApplicationDbContext context, DoiService doiService, ZenodoV2Service zenodoV2Service)
         {
             _zenodoService = zenodoService;
             _pdfService = pdfService;
             _docRepository = docRepository;
             _context = context;
             _doiService = doiService;
+            _zenodoV2Service = zenodoV2Service;
         }
 
-        [HttpPost("subir")]
+       /* [HttpPost("subir")]
         public async Task<IActionResult> SubirDocumento([FromForm] IFormFile file, [FromForm] DocumentoDTO dto )
         {
             if (file == null || file.Length == 0)
@@ -225,13 +227,62 @@ namespace AkanjiApp.Controllers
             {
                 return StatusCode(500, $"❌ Error interno: {ex.Message}");
             }
+        }*/
+
+        [HttpPost("subirDOi-borradorV2")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> SubirBorradorV2(
+    [FromForm] List<IFormFile> archivos,  // múltiples archivos
+    [FromForm] string doi)
+        {
+            if (archivos == null || !archivos.Any())
+                return BadRequest("Por favor, sube al menos un archivo.");
+
+            if (string.IsNullOrWhiteSpace(doi))
+                return BadRequest("El DOI del documento es obligatorio.");
+
+            try
+            {
+                string decodedDoi = Uri.UnescapeDataString(doi);
+                var documento = await _docRepository.GetByDoiAsync(decodedDoi);
+                if (documento == null)
+                    return NotFound($"No se encontró un documento con DOI: {decodedDoi}");
+
+                string depositoId = await _zenodoV2Service.CrearBorradorAsync();
+                await _zenodoV2Service.AgregarMetadatosAsync(depositoId, documento);
+
+                // Llama al nuevo método que maneja múltiples archivos
+                await _zenodoService.SubirArchivosAsync(depositoId, archivos);
+
+                return Ok(new { message = "Archivos subidos exitosamente a Zenodo.", depositoId });
+            }
+            catch (HttpRequestException httpEx)
+            {
+                if (httpEx.Data.Contains("ZenodoResponse"))
+                {
+                    var zenodoError = httpEx.Data["ZenodoResponse"]?.ToString();
+                    return StatusCode(400, $"❌ Error de la API de Zenodo: {zenodoError}");
+                }
+                return StatusCode(500, $"❌ Error al comunicarse con Zenodo: {httpEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Error interno: {ex.Message}");
+            }
         }
 
 
         [HttpPost("prueba")]
-        public async Task<IActionResult> Prueba()
+        public async Task<IActionResult> Prueba([FromForm] string doi)
         {
-          
+
+            string decodedDoi = Uri.UnescapeDataString(doi);
+            var documento = await _docRepository.GetByDoiAsync(decodedDoi);
+            if (documento == null)
+                return NotFound($"No se encontró un documento con DOI: {decodedDoi}");
+
+            string depositoId = await _zenodoV2Service.CrearBorradorAsync();
+            await _zenodoV2Service.AgregarMetadatosAsync(depositoId, documento);
 
             return Ok(new { message = "Prueba exitosa." });
 

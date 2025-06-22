@@ -40,6 +40,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpClient<DoiService>();
 builder.Services.AddHttpClient<PdfService>();
 builder.Services.AddHttpClient<ZenodoService>();
+builder.Services.AddHttpClient<ZenodoV2Service>();
+
 
 builder.Services.AddControllers();
 

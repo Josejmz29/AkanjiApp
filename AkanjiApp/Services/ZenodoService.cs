@@ -161,56 +161,15 @@
 
             }
 
-            // ---------- 6.  Financiadores ----------
-           var grants = documento.Funders?
-            .Where(f => !string.IsNullOrWhiteSpace(f.Name) && !string.IsNullOrWhiteSpace(f.GrantNumber))
-            .Select(f => new Dictionary<string, object>
-            {
-                ["funder"] = new Dictionary<string, object>
-                {
-                    ["name"] = f.Name,
-                    ["identifier"] = f.Identifier,
-                    ["scheme"] = f.Scheme ?? "fundref"
-                },
-                ["grant_number"] = f.GrantNumber
-            })
-            .ToList();
 
-            if (grants?.Any() == true)
-                metadataDict["grants"] = grants;
-
-            // ---------- 6. Financiadores ----------
-            /*if (documento.Funders != null && documento.Funders.Any())
-            {
-                var f = documento.Funders
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name) && !string.IsNullOrWhiteSpace(x.GrantNumber))
-                    .FirstOrDefault();
-
-                if (f != null)
-                {
-                    var grant = new Dictionary<string, object>
-                    {
-                        ["funder"] = new Dictionary<string, object>
-                        {
-                            ["name"] = f.Name,
-                            ["identifier"] = f.Identifier,
-                            ["scheme"] = f.Scheme ?? "fundref"
-                        },
-                        ["grant_number"] = f.GrantNumber
-                    };
-
-                    metadataDict["grants"] = new[] { grant };
-                }
-            }*/
-
-            // ---------- 7.  Enviar ----------
             var metadataPayload = new { metadata = metadataDict };
+            Console.WriteLine("\n"+JsonSerializer.Serialize(metadataDict, new JsonSerializerOptions { WriteIndented = true }));
 
             var json = JsonSerializer.Serialize(metadataPayload);
             
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
             using var content = new ByteArrayContent(jsonBytes);
-            Console.WriteLine("Payload limpio:\n" + JsonSerializer.Serialize(metadataPayload, new JsonSerializerOptions { WriteIndented = true }));
+           // Console.WriteLine("Payload limpio:\n" + JsonSerializer.Serialize(metadataPayload, new JsonSerializerOptions { WriteIndented = true }));
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             var response = await _httpClient.PutAsync($"{_zenodoApiUrl}/{depositoId}", content);
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -251,30 +210,50 @@
         /// <summary>
         /// Sube el archivo PDF a Zenodo.
         /// </summary>
-        public async Task SubirArchivoAsync(string depositoId, IFormFile file)
+        public async Task SubirArchivosAsync(string depositoId, IEnumerable<IFormFile> archivos)
         {
-            using var fileStream = file.OpenReadStream();
-            using var streamContent = new StreamContent(fileStream);
-            // (Opcional) Puedes establecer el Content-Type para el archivo si lo conoces, por ejemplo "application/pdf"
-            streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+            if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_zenodoToken}");
 
-            using var content = new MultipartFormDataContent();
-            content.Add(streamContent, "file", file.FileName);
-
-            var response = await _httpClient.PostAsync($"{_zenodoApiUrl}/{depositoId}/files", content);
-            if (!response.IsSuccessStatusCode)
+            foreach (var file in archivos)
             {
+                using var fileStream = file.OpenReadStream();
+                var contentType = file.ContentType ?? GetMimeTypeFromExtension(file.FileName);
+                using var streamContent = new StreamContent(fileStream);
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+
+                using var content = new MultipartFormDataContent();
+                content.Add(streamContent, "file", file.FileName);
+
+                var response = await _httpClient.PostAsync($"{_zenodoApiUrl}/{depositoId}/files", content);
+
                 var responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("Error al subir archivo: " + responseBody);
-                throw new HttpRequestException($"Error {response.StatusCode}: {responseBody}");
+                if (!response.IsSuccessStatusCode)
+                    throw new HttpRequestException($"Error al subir '{file.FileName}' ({response.StatusCode}): {responseBody}");
+
+                Console.WriteLine($"✔ Archivo '{file.FileName}' subido exitosamente.");
             }
-            else
-            {
-                Console.WriteLine("Archivo subido exitosamente.");
-                Console.WriteLine("Response: " + await response.Content.ReadAsStringAsync());
-            }
-            response.EnsureSuccessStatusCode();
         }
+
+        private static string GetMimeTypeFromExtension(string fileName)
+        {
+            var ext = Path.GetExtension(fileName)?.ToLowerInvariant();
+            return ext switch
+            {
+                ".pdf" => "application/pdf",
+                ".zip" => "application/zip",
+                ".csv" => "text/csv",
+                ".txt" => "text/plain",
+                ".json" => "application/json",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".tif" or ".tiff" => "image/tiff",
+                ".mp4" => "video/mp4",
+                ".mov" => "video/quicktime",
+                _ => "application/octet-stream",
+            };
+        }
+
 
 
         /// <summary>

@@ -115,13 +115,14 @@ export const subirDocumentoPorDoi = async (file, doi) => {
   }
 };
 
-export const subirDocumentoPorDoiBorrador = async (file, doi) => {
+export const subirDocumentoPorDoiBorrador = async (files, doi) => {
   const formData = new FormData();
-  formData.append("file", file);
+
+  files.forEach((file) => formData.append("archivos", file)); // plural
   formData.append("doi", doi);
 
   try {
-    const res = await api.post("/api/zenodo/subirDOi-borrador", formData, {
+    const res = await api.post("/api/zenodo/subirDOi-borradorV2", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

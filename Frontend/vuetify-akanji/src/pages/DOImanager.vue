@@ -60,39 +60,113 @@
                         <v-text-field v-model="documento.publisher" label="Editorial" outlined class="ma-2" />
                         <v-text-field v-model="documento.resource_type_general" label="Resource type" outlined
                           class="ma-2" />
+                        <v-card class="ma-2 pa-3" outlined max-height="200" style="overflow-y: auto;">
+                          <v-card-title class="text-subtitle-1">Subjects</v-card-title>
+                          <v-divider></v-divider>
+                          <v-list>
+                            <v-list-item v-for="(item, index) in documento.subjects" :key="index">
+                              <v-row class="w-auto" align="center" justify="space-between">
+                                <v-col cols="auto">
+                                  {{ item.subject }}
+                                </v-col>
+                                <v-col cols="auto">
+                                  <v-btn icon @click="eliminarSubject(index)">
+                                    <v-icon>mdi-delete</v-icon>
+                                  </v-btn>
+                                </v-col>
+                              </v-row>
+                            </v-list-item>
+                          </v-list>
+
+
+                        </v-card>
+                        <v-text-field v-model="nuevoSubject" label="Nuevo subject" dense hide-details class="mt-5"
+                          @keyup.enter="añadirSubject" />
+                        <v-btn small class="my-5" color="primary" @click="añadirSubject">Añadir</v-btn>
+
+
                       </v-col>
 
                       <v-col cols="12" md="6">
                         <v-select label="Language" :items="['en', 'es']" v-model="documento.language" class="ma-2"
                           outlined />
                         <v-text-field v-model="documento.version" label="Version" outlined class="ma-2" />
+
                       </v-col>
                     </v-row>
+
+
+                    <v-card class="ma-2 pa-3" outlined>
+                      <v-card-title class="text-subtitle-1">Funders</v-card-title>
+                      <v-list>
+                        <v-list-item v-for="(funder, index) in documento.funders" :key="index" class="px-0">
+                          <v-row class="w-100" align="center" justify="space-between">
+                            <v-col cols="5">
+                              <v-text-field v-model="funder.name" label="Funder Name" dense hide-details />
+                            </v-col>
+                            <v-col cols="5">
+                              <v-text-field v-model="funder.grant_number" label="Grant Number" dense hide-details />
+                            </v-col>
+                            <v-col cols="auto">
+                              <v-btn icon @click="eliminarFunder(index)">
+                                <v-icon>mdi-delete</v-icon>
+                              </v-btn>
+                            </v-col>
+                          </v-row>
+                        </v-list-item>
+                      </v-list>
+
+                      <!-- Campos para añadir nuevo funder -->
+                      <v-divider class="my-3"></v-divider>
+
+                      <v-row>
+                        <v-col cols="5">
+                          <v-text-field v-model="nuevoFunder.name" label="Nuevo Funder Name" dense hide-details />
+                        </v-col>
+                        <v-col cols="5">
+                          <v-text-field v-model="nuevoFunder.grant_number" label="Nuevo Grant Number" dense
+                            hide-details />
+                        </v-col>
+                        <v-col cols="auto">
+                          <v-btn color="primary" icon @click="añadirFunder">
+                            <v-icon>mdi-plus</v-icon>
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-card>
+
                   </v-container>
 
                   <v-divider></v-divider>
 
                   <v-container>
                     <v-card class="pa-4">
-                      <v-file-input label="Sube el archivo" prepend-icon="mdi-upload" accept=".pdf"
+                      <v-file-input label="Sube los archivos" prepend-icon="mdi-upload" multiple show-size
+                        :counter="true" accept=".pdf,.csv,.zip,.json,.jpg,.jpeg,.png,.tif,.tiff"
                         @change="handleFileUpload" outlined />
 
                       <v-alert v-if="uploadStore.uploadSuccess" type="success" class="mt-4">
-                        Archivo <strong>{{ uploadStore.uploadedFileName }}</strong> subido con éxito.
+                        Archivos subidos con éxito:
+                        <ul>
+                          <li v-for="(file, index) in uploadStore.uploadedFiles" :key="index">
+                            <strong>{{ file.name }}</strong>
+                          </li>
+                        </ul>
                       </v-alert>
                     </v-card>
                   </v-container>
 
                   <v-container>
                     <v-row justify="end">
-                      <v-btn class="px-3 mx-6" color="green" @click="subir" :disabled="!uploadStore.uploadResponse">
-                        Subir documento a
-                        Zenodo</v-btn>
+                      <v-btn class="px-3 mx-6" color="green" @click="subir"
+                        :disabled="uploadStore.uploadedFiles.length === 0">
+                        Subir documento a Zenodo
+                      </v-btn>
 
                       <v-btn class="px-3 mx-6" color="green" @click="subirBorrador"
-                        :disabled="!uploadStore.uploadResponse">
-                        Subir documento a
-                        Zenodo (Borrador) </v-btn>
+                        :disabled="uploadStore.uploadedFiles.length === 0">
+                        Subir documento a Zenodo (Borrador)
+                      </v-btn>
 
                       <v-btn class="px-3 mx-6" color="primary" @click="volver" width="90">Volver</v-btn>
                     </v-row>
@@ -159,10 +233,12 @@ const subidaExitosa = ref(null);
 
 
 const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  uploadStore.setUploadInfo(file.name, file);
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  uploadStore.setUploadFiles(Array.from(files)); // Nueva función para múltiples
 };
+
 
 const subir = async () => {
   try {
@@ -189,12 +265,14 @@ const subir = async () => {
 
 const subirBorrador = async () => {
   try {
-    const file = uploadStore.uploadResponse
+    const files = uploadStore.uploadedFiles;
     const doi = documentoDOIStore.documento.doi
 
-    if (!file || !doi) throw new Error('Archivo o DOI no definidos.')
+    if (!files || files.length === 0 || !doi)
+      throw new Error('Archivo(s) o DOI no definidos.');
 
-    const response = await subirDocumentoPorDoiBorrador(file, doi)
+
+    const response = await subirDocumentoPorDoiBorrador(files, doi);
 
     subidaExitosa.value = true
     console.log('Respuesta subida:', response)
@@ -223,11 +301,13 @@ const resetearTodo = () => {
 const buscarDoi = async () => {
   try {
     error.value = null
+
+
     const res = await obtenerPorDoi(doi.value)
     console.log(res);
 
     documentoDOIStore.setDocumento(res)
-
+    //documento.value = { ...res, subjects: res.subjects || [] }
     documento.value = res
     vistaActual.value = 2
   } catch (err) {
@@ -238,4 +318,40 @@ const buscarDoi = async () => {
 const volver = () => {
   resetearTodo();
 }
+
+
+
+const nuevoSubject = ref('')
+
+const añadirSubject = () => {
+  if (nuevoSubject.value.trim() !== '') {
+    documento.value.subjects = documento.value.subjects || []
+    documento.value.subjects.push({ subject: nuevoSubject.value.trim() })
+    nuevoSubject.value = ''
+  }
+}
+
+const eliminarSubject = (index) => {
+  documento.value.subjects.splice(index, 1)
+}
+const nuevoFunder = ref({
+  name: '',
+  grant_number: ''
+});
+
+const añadirFunder = () => {
+  if (nuevoFunder.value.name && nuevoFunder.value.grant_number) {
+    documento.value.funders.push({
+      name: nuevoFunder.value.name,
+      grant_number: nuevoFunder.value.grant_number
+    });
+    nuevoFunder.value = { name: '', grant_number: '' };
+  }
+};
+
+const eliminarFunder = (index) => {
+  documento.value.funders.splice(index, 1);
+};
+
+
 </script>

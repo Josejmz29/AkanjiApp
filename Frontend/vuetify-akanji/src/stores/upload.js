@@ -1,27 +1,33 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { defineStore } from "pinia";
+import { ref } from "vue";
 
-export const useUploadStore = defineStore('upload', () => {
-  const uploadedFileName = ref('');
+export const useUploadStore = defineStore("upload", () => {
+  const uploadedFileName = ref("");
   const uploadSuccess = ref(false);
-  const uploadResponse = ref(null);
+
+  const uploadedFiles = ref([]); // En lugar de solo uno
 
   function setUploadInfo(name, file) {
     uploadedFileName.value = name;
     uploadSuccess.value = true;
-    uploadResponse.value = file;
   }
 
   function resetUpload() {
-    uploadedFileName.value = '';
+    uploadedFileName.value = "";
     uploadSuccess.value = false;
-    uploadResponse.value = null;
+    uploadedFiles.value = [];
+  }
+  function setUploadFiles(fileList) {
+    uploadedFiles.value = fileList;
+    uploadSuccess.value = true;
   }
 
   return {
     uploadedFileName,
     uploadSuccess,
-    uploadResponse,
+
+    uploadedFiles, // Nueva propiedad para múltiples archivos
+    setUploadFiles, // Nueva función para manejar múltiples archivos
     setUploadInfo,
     resetUpload,
   };
