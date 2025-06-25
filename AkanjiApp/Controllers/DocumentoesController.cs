@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using AkanjiApp.Models;
 using AkanjiApp.Repository;
 using AkanjiApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AkanjiApp.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class DocumentoesController : ControllerBase

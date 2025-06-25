@@ -27,10 +27,19 @@ namespace AkanjiApp.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var user = new Usuario { UserName = model.Email, Email = model.Email, NombreCompleto = model.NombreCompleto };
+            var user = new Usuario { UserName = model.Email, Email = model.Email, NombreCompleto = model.NombreCompleto , ZenodoToken = model.ZenodoToken };
             var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (!result.Succeeded) return BadRequest(result.Errors);
+            if (!result.Succeeded)
+            {
+                var errores = result.Errors.Select(e => e.Description).ToList();
+
+                return BadRequest(new
+                {
+                    message = "Error al crear el usuario.",
+                    errors = errores
+                });
+            }
 
             return Ok(new { message = "Usuario registrado con éxito" });
         }
@@ -56,17 +65,19 @@ namespace AkanjiApp.Controllers
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("NombreCompleto", user.NombreCompleto)
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),              
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
             };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: DateTime.UtcNow.AddMinutes(30),
                 signingCredentials: creds
             );
+            Console.WriteLine($"Emitiendo token, ahora es: {DateTime.UtcNow}, expira en: {DateTime.UtcNow.AddMinutes(30)}");
+
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -77,6 +88,7 @@ namespace AkanjiApp.Controllers
         public string NombreCompleto { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
+        public string ZenodoToken { get; set; }
     }
 
     public class LoginModel

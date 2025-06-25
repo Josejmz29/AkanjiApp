@@ -13,13 +13,27 @@
     {
         private readonly HttpClient _httpClient;
         private readonly string _zenodoApiUrl = "https://zenodo.org/api/deposit/depositions";
-        private readonly string _zenodoToken;
+        private string _zenodoToken;
 
-        public ZenodoService(HttpClient httpClient, IConfiguration configuration)
+        public ZenodoService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _zenodoToken = configuration["Zenodo:Token"]; // Almacena tu token en appsettings.json
+            _zenodoToken = string.Empty; // Inicializar el token como vacío
         }
+
+        public Boolean SetZenodoToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Console.WriteLine("❌ Token de Zenodo no puede ser nulo o vacío.");
+                return false;
+            }
+
+            _zenodoToken = token;
+            Console.WriteLine("✅ Token de Zenodo configurado correctamente.");
+            return true;
+        }
+
 
         /// <summary>
         /// Crea un nuevo depósito en Zenodo.

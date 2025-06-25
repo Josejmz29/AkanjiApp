@@ -6,9 +6,6 @@ namespace AkanjiApp.Models
     public class DocumentoAutor
     {
       
-
-
-
         [JsonPropertyName("name")]
         public string? Name { get; set; }
        
@@ -16,7 +13,6 @@ namespace AkanjiApp.Models
 
         [JsonPropertyName("affiliation")]
         public string? Affiliation { get; set; }
-
 
         [Key]
         public int Id { get; set; }

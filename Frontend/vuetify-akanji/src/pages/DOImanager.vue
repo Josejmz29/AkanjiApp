@@ -35,9 +35,9 @@
                 <v-card-title class="text-h5">Datos del Documento</v-card-title>
                 <v-card-text>
 
-                  <v-text-field v-model="documento.title" label="Título" outlined class="mb-4" />
+                  <v-text-field v-model="documento.title" label="Título" outlined class="mb-4" readonly />
 
-                  <v-textarea v-model="documento.description" label="Descripción" outlined class="mb-4" />
+                  <v-textarea v-model="documento.description" label="Descripción" outlined class="mb-4" readonly />
 
                   <v-card class="mt-4" elevation="2" max-height="200" style="overflow-y: auto;">
                     <v-card-title class="text-h6">Autores</v-card-title>
@@ -57,9 +57,11 @@
                   <v-container>
                     <v-row>
                       <v-col cols="12" md="6">
-                        <v-text-field v-model="documento.publisher" label="Editorial" outlined class="ma-2" />
-                        <v-text-field v-model="documento.resource_type_general" label="Resource type" outlined
+                        <v-text-field v-model="documento.publisher" label="Editorial" outlined class="ma-2" readonly />
+                        <v-select v-model="resource_type" label="Resource Type"
+                          :items="['Publication / Journal article', 'Publication / Conference Paper']" outlined
                           class="ma-2" />
+
                         <v-card class="ma-2 pa-3" outlined max-height="200" style="overflow-y: auto;">
                           <v-card-title class="text-subtitle-1">Subjects</v-card-title>
                           <v-divider></v-divider>
@@ -69,28 +71,21 @@
                                 <v-col cols="auto">
                                   {{ item.subject }}
                                 </v-col>
-                                <v-col cols="auto">
-                                  <v-btn icon @click="eliminarSubject(index)">
-                                    <v-icon>mdi-delete</v-icon>
-                                  </v-btn>
-                                </v-col>
+
                               </v-row>
                             </v-list-item>
                           </v-list>
 
 
                         </v-card>
-                        <v-text-field v-model="nuevoSubject" label="Nuevo subject" dense hide-details class="mt-5"
-                          @keyup.enter="añadirSubject" />
-                        <v-btn small class="my-5" color="primary" @click="añadirSubject">Añadir</v-btn>
+
 
 
                       </v-col>
 
                       <v-col cols="12" md="6">
-                        <v-select label="Language" :items="['en', 'es']" v-model="documento.language" class="ma-2"
-                          outlined />
-                        <v-text-field v-model="documento.version" label="Version" outlined class="ma-2" />
+                        <v-text-field v-model="documento.language" label="Language" outlined class="ma-2" readonly />
+                        <v-text-field v-model="documento.version" label="Version" outlined class="ma-2" readonly />
 
                       </v-col>
                     </v-row>
@@ -102,37 +97,18 @@
                         <v-list-item v-for="(funder, index) in documento.funders" :key="index" class="px-0">
                           <v-row class="w-100" align="center" justify="space-between">
                             <v-col cols="5">
-                              <v-text-field v-model="funder.name" label="Funder Name" dense hide-details />
+                              <v-text-field v-model="funder.name" label="Funder Name" dense hide-details readonly />
                             </v-col>
                             <v-col cols="5">
-                              <v-text-field v-model="funder.grant_number" label="Grant Number" dense hide-details />
+                              <v-text-field v-model="funder.grant_number" label="Grant Number" dense hide-details
+                                readonly />
                             </v-col>
-                            <v-col cols="auto">
-                              <v-btn icon @click="eliminarFunder(index)">
-                                <v-icon>mdi-delete</v-icon>
-                              </v-btn>
-                            </v-col>
+
                           </v-row>
                         </v-list-item>
                       </v-list>
 
-                      <!-- Campos para añadir nuevo funder -->
-                      <v-divider class="my-3"></v-divider>
 
-                      <v-row>
-                        <v-col cols="5">
-                          <v-text-field v-model="nuevoFunder.name" label="Nuevo Funder Name" dense hide-details />
-                        </v-col>
-                        <v-col cols="5">
-                          <v-text-field v-model="nuevoFunder.grant_number" label="Nuevo Grant Number" dense
-                            hide-details />
-                        </v-col>
-                        <v-col cols="auto">
-                          <v-btn color="primary" icon @click="añadirFunder">
-                            <v-icon>mdi-plus</v-icon>
-                          </v-btn>
-                        </v-col>
-                      </v-row>
                     </v-card>
 
                   </v-container>
@@ -228,7 +204,7 @@ const doi = ref('')
 const error = ref(null)
 const vistaActual = ref(1)
 const documento = ref({})
-
+const resource_type = ref('')
 const subidaExitosa = ref(null);
 
 
@@ -271,8 +247,17 @@ const subirBorrador = async () => {
     if (!files || files.length === 0 || !doi)
       throw new Error('Archivo(s) o DOI no definidos.');
 
+    let resourceType;
+    console.log('Tipo de recurso:', resource_type.value)
+    if (resource_type.value === 'Publication / Journal article') {
+      resourceType = 'publication-article'
+    } else if (resource_type.value === 'Publication / Conference Paper') {
+      resourceType = 'publication-conferencePaper'
+    } else {
+      resourceType = 'default'
+    }
 
-    const response = await subirDocumentoPorDoiBorrador(files, doi);
+    const response = await subirDocumentoPorDoiBorrador(files, doi, resourceType);
 
     subidaExitosa.value = true
     console.log('Respuesta subida:', response)
@@ -311,7 +296,8 @@ const buscarDoi = async () => {
     documento.value = res
     vistaActual.value = 2
   } catch (err) {
-    error.value = err.message || 'Error al buscar DOI'
+    if (err)
+      error.value = err.message || 'Error al buscar DOI'
   }
 }
 

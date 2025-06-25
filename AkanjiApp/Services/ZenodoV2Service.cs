@@ -16,13 +16,27 @@ namespace AkanjiApp.Services
     public class ZenodoV2Service
     {
         private readonly HttpClient _httpClient;
-        private readonly string _zenodoToken;
+        private string _zenodoToken;
         private const string BaseUrl = "https://zenodo.org/api/records";
 
-        public ZenodoV2Service(HttpClient httpClient, IConfiguration configuration)
+        public ZenodoV2Service(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _zenodoToken = configuration["Zenodo:Token"];
+            _zenodoToken = string.Empty; // Inicializar el token como vacío
+   
+        }
+
+        public Boolean SetZenodoToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                Console.WriteLine("❌ Token de Zenodo no puede ser nulo o vacío.");
+                return false;
+            }
+
+            _zenodoToken = token;
+            Console.WriteLine("✅ Token de Zenodo configurado correctamente.");
+            return true;
         }
 
         public async Task<string> CrearBorradorAsync()
@@ -52,7 +66,7 @@ namespace AkanjiApp.Services
             }
         }
 
-        public async Task AgregarMetadatosAsync(string recordId, Documento documento)
+        public async Task AgregarMetadatosAsync(string recordId, Documento documento,string resourceType)
         {
 
             PrepareAuthHeader();
@@ -81,22 +95,30 @@ namespace AkanjiApp.Services
             var metadataDict = new Dictionary<string, object?>
             {
                 ["title"] = documento.Titulo ?? "Título no disponible",
-               
+
                 ["description"] = string.IsNullOrWhiteSpace(documento.Description) ? "Sin descripción disponible." : documento.Description,
                 ["creators"] = creators,
-                
+
                 ["publication_date"] = (documento.FechaPublicacion ?? DateTime.UtcNow).ToString("yyyy-MM-dd"),
                 ["version"] = string.IsNullOrWhiteSpace(documento.Version) ? "1.0" : documento.Version,
                 ["publisher"] = documento.Publisher ?? "Desconocido",
                 ["access_right"] = "open", // Asumimos acceso abierto por defecto
-                
-               
                 ["languages"] = new[] { string.IsNullOrWhiteSpace(documento.Language) ? "en" : documento.Language },
-               ["license"] = new Dictionary<string, string> { ["id"] = "cc-by-4.0" }, // Licencia CC BY 4.0 por defecto
-                ["resource_type"] = new Dictionary<string, string> { ["id"] = string.IsNullOrWhiteSpace(documento.ResourceType) ? "publication-" : documento.ResourceType }
+               
+                // ["license"] = new Dictionary<string, string> { ["id"] = "cc-by-4.0" }, // Licencia CC BY 4.0 por defecto
             };
 
+            string tipo = documento.ResourceType;
+            if (resourceType.Equals("publication-article") || resourceType.Equals("publication-conferencepaper"))
+            {
+                tipo = resourceType;
+            }
+           
 
+            metadataDict["resource_type"] = new Dictionary<string, string>
+            {
+                ["id"] = tipo
+            };
 
             // ---------- 3.  Campos adicionales ----------
             AddIfNotNull(metadataDict, "doi", documento.DOI);
@@ -115,19 +137,7 @@ namespace AkanjiApp.Services
                 metadataDict["keywords"] = documento.Subjects.Select(s => s.Text).ToArray();
             }
 
-            // Rights - convertir a list rights según ejemplo
-           /* if (documento.RightsList?.Any() == true)
-            {
-                metadataDict["rights"] = documento.RightsList
-                    .Where(r => !string.IsNullOrWhiteSpace(r.RightsUri))
-                    .Select(r => new Dictionary<string, object>
-                    {
-                        ["id"] = "cc-by-4.0",
-                     
-                        ["link"] = r.RightsUri
-                    })
-                    .ToArray();
-            }*/
+          
 
             if (documento.Funders?.Any() == true)
             {
@@ -233,24 +243,7 @@ namespace AkanjiApp.Services
 
             Console.WriteLine($"✅ Archivo '{file.FileName}' subido correctamente.");
 
-
-
-           /* using var fileStream = file.OpenReadStream();
-            using var fileContent = new StreamContent(fileStream);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-
-            using var content = new MultipartFormDataContent
-            {
-                { fileContent, "file", file.FileName }
-            };
-
-            var response = await _httpClient.PostAsync($"{BaseUrl}/{recordId}/draft/files", content);
-            var responseBody = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"❌ Error al subir archivo: {response.StatusCode} - {responseBody}");*/
-
-            
+                 
            
         }
 

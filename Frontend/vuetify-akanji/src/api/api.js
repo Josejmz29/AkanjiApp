@@ -1,12 +1,29 @@
 // src/api/api.js
 import axios from "axios";
 
+import { useUserStore } from "@/stores/user";
+
 const api = axios.create({
   baseURL: "http://localhost:5215",
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Detecta token expirado o inválido
+    if (error.response && error.response.status === 401) {
+      const userStore = useUserStore();
+      userStore.logout(); // Borra el token
+      console.log("Token expirado o inválido, redirigiendo al login");
+      window.location.href = "/login"; // Redirección forzada
+    }
+    return Promise.reject(error);
+  }
+);
+export default api;
 
 function handleError(error) {
   if (error.response) {
@@ -115,20 +132,46 @@ export const subirDocumentoPorDoi = async (file, doi) => {
   }
 };
 
-export const subirDocumentoPorDoiBorrador = async (files, doi) => {
+export const subirDocumentoPorDoiBorrador = async (
+  files,
+  doi,
+  resourceType
+) => {
   const formData = new FormData();
 
   files.forEach((file) => formData.append("archivos", file)); // plural
   formData.append("doi", doi);
+  formData.append("resourceType", resourceType);
 
   try {
     const res = await api.post("/api/zenodo/subirDOi-borradorV2", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        // Authorization: `Bearer ${token}`,
       },
     });
     return res.data;
   } catch (error) {
     throw handleError(error);
+  }
+};
+
+export const registrarUsuario = async ({ nombreCompleto, email, password }) => {
+  try {
+    const response = await axios.post("/api/auth/register", {
+      nombreCompleto,
+      email,
+      password,
+    });
+
+    return response.data; // por ejemplo: { message: "Usuario registrado con éxito" }
+  } catch (error) {
+    // Puedes personalizar el error según cómo lo manejes en el backend
+    if (error.response && error.response.data) {
+      throw new Error(
+        error.response.data.message || "Error al registrar usuario"
+      );
+    }
+    throw new Error("Error de red o del servidor.");
   }
 };

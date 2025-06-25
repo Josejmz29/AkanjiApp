@@ -22,12 +22,12 @@ namespace AkanjiApp.Models
 
 
             modelBuilder.Entity<Documento>()
-    .OwnsMany(d => d.RightsList, r =>
-    {
-        r.WithOwner().HasForeignKey("DocumentoDOI");
-        r.Property<int>("Id");
-        r.HasKey("Id");
-    });
+            .OwnsMany(d => d.RightsList, r =>
+            {
+                r.WithOwner().HasForeignKey("DocumentoDOI");
+                r.Property<int>("Id");
+                r.HasKey("Id");
+            });
 
 
             modelBuilder.Entity<Documento>()
