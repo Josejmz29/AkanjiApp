@@ -55,46 +55,7 @@ namespace AkanjiApp.Services
         }
 
         //++++++++++++++++++++  +++++++++++++++++++++++++++++
-        public List<Dictionary<string, object>> ParseGrantsFromCrossref(JsonElement root)
-        {
-            List<Dictionary<string, object>> grants = new();
-
-            if (root.TryGetProperty("funder", out JsonElement funders) && funders.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var funder in funders.EnumerateArray())
-                {
-                    string funderName = funder.GetProperty("name").GetString() ?? "";
-                    string? funderDOI = funder.TryGetProperty("DOI", out var doiEl) ? doiEl.GetString() : null;
-
-                    if (funder.TryGetProperty("award", out JsonElement awards) && awards.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var award in awards.EnumerateArray())
-                        {
-                            string grantNumber = award.GetString() ?? "";
-
-                            var grant = new Dictionary<string, object>
-                            {
-                                ["grant_number"] = grantNumber,
-                                ["funder"] = new Dictionary<string, object>
-                                {
-                                    ["name"] = funderName
-                                }
-                            };
-
-                            if (!string.IsNullOrWhiteSpace(funderDOI))
-                            {
-                                ((Dictionary<string, object>)grant["funder"])["identifier"] = funderDOI;
-                                ((Dictionary<string, object>)grant["funder"])["scheme"] = "fundref";
-                            }
-
-                            grants.Add(grant);
-                        }
-                    }
-                }
-            }
-
-            return grants;
-        }
+       
         //+++++++++++++++++++++++++++++
 
         private Documento ParsearJsonADocumento(string json, string jsonOA)
@@ -209,14 +170,7 @@ namespace AkanjiApp.Services
 
                 }
             }
-
-           
-
-          
-
-
-
-
+       
 
             // Rights
             List<LicenciaDerechos> rightsList = new();

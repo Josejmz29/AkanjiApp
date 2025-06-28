@@ -10,10 +10,9 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 // Agregar contexto de base de datos MySQL
-// Agregar contexto de base de datos MySQL
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection")));
 

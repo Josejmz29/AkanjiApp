@@ -1,6 +1,6 @@
 {
   "email": "jose@gmail.com",
-  "password": 
+  "password": "AvionTripi29-"
 }
 
 {

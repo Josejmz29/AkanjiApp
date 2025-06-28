@@ -98,7 +98,6 @@ namespace AkanjiApp.Services
 
                 ["description"] = string.IsNullOrWhiteSpace(documento.Description) ? "Sin descripción disponible." : documento.Description,
                 ["creators"] = creators,
-
                 ["publication_date"] = (documento.FechaPublicacion ?? DateTime.UtcNow).ToString("yyyy-MM-dd"),
                 ["version"] = string.IsNullOrWhiteSpace(documento.Version) ? "1.0" : documento.Version,
                 ["publisher"] = documento.Publisher ?? "Desconocido",
@@ -125,12 +124,15 @@ namespace AkanjiApp.Services
             AddIfNotNull(metadataDict, "journal_title", documento.Publisher);
 
 
-            metadataDict["dates"] = new[] {
+          /*  metadataDict["dates"] = new[] {
                 new Dictionary<string,string> {
                     ["date"] = (documento.FechaPublicacion ?? DateTime.UtcNow).ToString("yyyy-MM-dd"),
-                    ["type"] = "Issued"
+                    ["type"] = "issued"
                 }
-            };
+            };*/
+
+            metadataDict["publication_date"] = (documento.FechaPublicacion ?? DateTime.UtcNow).ToString("yyyy-MM-dd");
+
             if (documento.Subjects?.Any() == true)
             {
                 metadataDict["subjects"] = documento.Subjects.Select(s => new { subject = s.Text }).ToArray();
@@ -209,57 +211,24 @@ namespace AkanjiApp.Services
            
         }
 
-        public async Task SubirArchivoAsync(string recordId, IFormFile file)
+        public async Task PublicarBorradorAsync(string recordId)
         {
             PrepareAuthHeader();
 
+            var requestUrl = $"{BaseUrl}/{recordId}/draft/actions/publish";
 
-            // 1️⃣ Inicializar subida
-            var initList = new[]
-            {
-                 new { key = file.FileName }
-            };
-            var initJson = JsonSerializer.Serialize(initList);
-            using var initContent = new StringContent(initJson, Encoding.UTF8, "application/json");
-            var initResp = await _httpClient.PostAsync($"{BaseUrl}/{recordId}/draft/files", initContent);
-            var initBody = await initResp.Content.ReadAsStringAsync();
-            if (!initResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Error init upload: {initResp.StatusCode} - {initBody}");
-
-            // 2️⃣ Enviar contenido
-            using var steam = file.OpenReadStream();
-            using var putContent = new StreamContent(steam);
-            putContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            var putResp = await _httpClient.PutAsync($"{BaseUrl}/{recordId}/draft/files/{file.FileName}/content", putContent);
-            var putBody = await putResp.Content.ReadAsStringAsync();
-            if (!putResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Error uploading content: {putResp.StatusCode} - {putBody}");
-
-            // 3️⃣ Commit
-            var commitResp = await _httpClient.PostAsync($"{BaseUrl}/{recordId}/draft/files/{file.FileName}/commit", null);
-            var commitBody = await commitResp.Content.ReadAsStringAsync();
-            if (!commitResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Error commits upload: {commitResp.StatusCode} - {commitBody}");
-
-            Console.WriteLine($"✅ Archivo '{file.FileName}' subido correctamente.");
-
-                 
-           
-        }
-
-        public async Task PublicarAsync(string recordId)
-        {
-            PrepareAuthHeader();
-
-            var content = new StringContent("{}", Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{BaseUrl}/{recordId}/actions/publish", content);
+            var response = await _httpClient.PostAsync(requestUrl, null);
             var responseBody = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"❌ Error al publicar: {response.StatusCode} - {responseBody}");
+            {
+                throw new HttpRequestException($"❌ Error al publicar el borrador: {response.StatusCode} - {responseBody}");
+            }
 
-            Console.WriteLine("🚀 Depósito publicado exitosamente.");
+            Console.WriteLine($"✅ Borrador {recordId} publicado correctamente.");
         }
+
+
 
         // Helpers
         private void AddIfNotNull(IDictionary<string, object> dict, string key, object? value)

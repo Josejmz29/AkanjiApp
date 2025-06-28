@@ -134,10 +134,17 @@
 
                   <v-container>
                     <v-row justify="end">
-                      <v-btn class="px-3 mx-6" color="green" @click="subir"
-                        :disabled="uploadStore.uploadedFiles.length === 0">
-                        Subir documento a Zenodo
-                      </v-btn>
+                      <v-tooltip v-if="uploadStore.uploadedFiles.length !== 0" location="top">
+                        <template #activator="{ props }">
+                          <v-btn class="px-3 mx-6" color="green" v-bind="props" @click="subir"
+                            :disabled="uploadStore.uploadedFiles.length === 0">
+                            Publicar en Zenodo
+                          </v-btn>
+                        </template>
+                        <span> Esta acción es irreversible. La publicación no se puede borrar una vez
+                          realizada.</span>
+                      </v-tooltip>
+
 
                       <v-btn class="px-3 mx-6" color="green" @click="subirBorrador"
                         :disabled="uploadStore.uploadedFiles.length === 0">
@@ -218,20 +225,31 @@ const handleFileUpload = (event) => {
 
 const subir = async () => {
   try {
-    const file = uploadStore.uploadResponse
+    const files = uploadStore.uploadedFiles;
     const doi = documentoDOIStore.documento.doi
 
-    if (!file || !doi) throw new Error('Archivo o DOI no definidos.')
+    if (!files || files.length === 0 || !doi)
+      throw new Error('Archivo(s) o DOI no definidos.');
 
-    const response = await subirDocumentoPorDoi(file, doi)
+    let resourceType;
+    console.log('Tipo de recurso:', resource_type.value)
+    if (resource_type.value === 'Publication / Journal article') {
+      resourceType = 'publication-article'
+    } else if (resource_type.value === 'Publication / Conference Paper') {
+      resourceType = 'publication-conferencepaper'
+    } else {
+      resourceType = 'default'
+    }
+
+    const response = await subirDocumentoPorDoi(files, doi, resourceType);
 
     subidaExitosa.value = true
     console.log('Respuesta subida:', response)
 
     vistaActual.value = 3
 
-    // Reinicia todo tras 5 segundos con recarga
-    setTimeout(() => { window.location.reload() }, 5000)
+    //Reinicia todo tras 5 segundos con recarga
+    //setTimeout(() => { window.location.reload() }, 5000)
 
   } catch (error) {
     subidaExitosa.value = false
@@ -252,7 +270,7 @@ const subirBorrador = async () => {
     if (resource_type.value === 'Publication / Journal article') {
       resourceType = 'publication-article'
     } else if (resource_type.value === 'Publication / Conference Paper') {
-      resourceType = 'publication-conferencePaper'
+      resourceType = 'publication-conferencepaper'
     } else {
       resourceType = 'default'
     }
@@ -264,7 +282,7 @@ const subirBorrador = async () => {
 
     vistaActual.value = 3
 
-    // Reinicia todo tras 5 segundos con recarga
+    //Reinicia todo tras 5 segundos con recarga
     //setTimeout(() => { window.location.reload() }, 5000)
 
   } catch (error) {
@@ -309,35 +327,6 @@ const volver = () => {
 
 const nuevoSubject = ref('')
 
-const añadirSubject = () => {
-  if (nuevoSubject.value.trim() !== '') {
-    documento.value.subjects = documento.value.subjects || []
-    documento.value.subjects.push({ subject: nuevoSubject.value.trim() })
-    nuevoSubject.value = ''
-  }
-}
-
-const eliminarSubject = (index) => {
-  documento.value.subjects.splice(index, 1)
-}
-const nuevoFunder = ref({
-  name: '',
-  grant_number: ''
-});
-
-const añadirFunder = () => {
-  if (nuevoFunder.value.name && nuevoFunder.value.grant_number) {
-    documento.value.funders.push({
-      name: nuevoFunder.value.name,
-      grant_number: nuevoFunder.value.grant_number
-    });
-    nuevoFunder.value = { name: '', grant_number: '' };
-  }
-};
-
-const eliminarFunder = (index) => {
-  documento.value.funders.splice(index, 1);
-};
 
 
 </script>

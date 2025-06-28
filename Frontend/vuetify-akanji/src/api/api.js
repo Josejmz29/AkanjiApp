@@ -115,15 +115,18 @@ export const subirDocumentoConMetadata = async (file, dto) => {
   }
 };
 
-export const subirDocumentoPorDoi = async (file, doi) => {
+export const subirDocumentoPorDoi = async (files, doi, resourceType) => {
   const formData = new FormData();
-  formData.append("file", file);
+
+  files.forEach((file) => formData.append("archivos", file)); // plural
   formData.append("doi", doi);
+  formData.append("resourceType", resourceType);
 
   try {
-    const res = await api.post("/api/zenodo/subirDOi", formData, {
+    const res = await api.post("/api/zenodo/subirDOi-pubV2", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        // Authorization: `Bearer ${token}`,
       },
     });
     return res.data;
@@ -131,7 +134,6 @@ export const subirDocumentoPorDoi = async (file, doi) => {
     throw handleError(error);
   }
 };
-
 export const subirDocumentoPorDoiBorrador = async (
   files,
   doi,
