@@ -138,7 +138,7 @@ namespace AkanjiApp.Services
 
             var reqContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("http://localhost:11434/api/chat", reqContent);
+            var response = await _httpClient.PostAsync("http://host.docker.internal:11434/api/chat", reqContent);
             string raw = await response.Content.ReadAsStringAsync();
 
             using JsonDocument doc = JsonDocument.Parse(raw);

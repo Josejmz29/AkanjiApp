@@ -158,22 +158,11 @@ export const subirDocumentoPorDoiBorrador = async (
   }
 };
 
-export const registrarUsuario = async ({ nombreCompleto, email, password }) => {
-  try {
-    const response = await axios.post("/api/auth/register", {
-      nombreCompleto,
-      email,
-      password,
-    });
+export async function extraerFunders(file) {
+  const formData = new FormData();
+  formData.append("file", file);
 
-    return response.data; // por ejemplo: { message: "Usuario registrado con éxito" }
-  } catch (error) {
-    // Puedes personalizar el error según cómo lo manejes en el backend
-    if (error.response && error.response.data) {
-      throw new Error(
-        error.response.data.message || "Error al registrar usuario"
-      );
-    }
-    throw new Error("Error de red o del servidor.");
-  }
-};
+  return api.post("/api/Pdf/extraer-acknowledgement", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -116,7 +117,15 @@ builder.Services.AddCors(options =>
         });
 });
 
+WaitForDatabase(builder.Configuration.GetConnectionString("DefaultConnection"), maxRetries: 20, delaySeconds: 5);
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -134,3 +143,31 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Método auxiliar para esperar la base de datos
+void WaitForDatabase(string connectionString, int maxRetries, int delaySeconds)
+{
+    int retry = 0;
+    while (retry < maxRetries)
+    {
+        try
+        {
+            Console.WriteLine($"Intentando conectar a la base de datos... intento {retry + 1}/{maxRetries}");
+            using var connection = new MySqlConnection(connectionString);
+            connection.Open();
+            Console.WriteLine("¡Conexión a la base de datos exitosa!");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"No se pudo conectar: {ex.Message}");
+            retry++;
+            if (retry >= maxRetries)
+            {
+                Console.WriteLine("Se alcanzó el número máximo de intentos. Abortando...");
+                throw;
+            }
+            Thread.Sleep(delaySeconds * 1000);
+        }
+    }
+}

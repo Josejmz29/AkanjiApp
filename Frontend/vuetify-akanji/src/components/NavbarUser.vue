@@ -3,6 +3,7 @@
     <v-app-bar-title @click="goHome" class="cursor-pointer">Akanji</v-app-bar-title>
     <v-spacer />
     <v-btn text @click="goToDoiManager">DOI Manager</v-btn> <!-- Nueva opción -->
+    <v-btn text @click="goToExtraerFunder">Extraer Funders</v-btn> <!-- Nueva opción -->
     <v-btn text @click="logout">Logout</v-btn>
   </v-toolbar>
 </template>
@@ -16,6 +17,7 @@ const userStore = useUserStore();
 
 const goHome = () => router.push('/');
 const goToDoiManager = () => router.push('/DOImanager'); // Ruta a DOI Manager
+const goToExtraerFunder = () => router.push('/ExtraerFunder'); // Ruta a Extraer Funders
 
 const logout = () => {
   userStore.logout();

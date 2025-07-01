@@ -1,13 +1,15 @@
 {
-  "email": "jose@gmail.com",
-  "password": "AvionTripi29-"
+  "email": "user@gmail.com",
+  "password": "Akanjiapp29-"
 }
 
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Impvc2VAZ21haWwuY29tIiwiTm9tYnJlQ29tcGxldG8iOiJqb3NlIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiI1MDE3YTQ2YS0zMmNhLTRhYjItYThhZC02ZTBhY2ZiZGVkMjYiLCJleHAiOjE3NTA3MDMzNjMsImlzcyI6InR1YXBpLmNvbSIsImF1ZCI6InR1YXBpLmNvbSJ9.0lc79c-ghId5QRF73Q5fYRf4m6-dJ6b5oKWYVJXCoro"
 }
 
+
 10.1007/s11517-023-02912-0
+
 
 
 
@@ -15,3 +17,30 @@ user@gmail.com
 UsuarioPrueba
 HMnhPLiIDT1fSkavc1clWFesoO96k3Iqrf2Vg1NiDzAFCu3wPdWPiFwi48Mb
 Akanjiapp29-
+
+
+
+
+
+
+
+
+
+✅ Opciones para solucionarlo
+🟢 1) Usar host.docker.internal (en Linux moderno, macOS y Windows)
+Docker crea el hostname especial host.docker.internal, que dentro de un contenedor apunta al host físico.
+
+En lugar de:
+
+csharp
+Copiar
+Editar
+var response = await _httpClient.PostAsync("http://localhost:11434/api/chat", reqContent);
+Usa:
+
+csharp
+Copiar
+Editar
+var response = await _httpClient.PostAsync("http://host.docker.internal:11434/api/chat", reqContent);
+⚠️ Esto funciona directo en Windows y macOS, y en la mayoría de distros Linux modernas (o si Docker Desktop está instalado).
+Si no te funciona, revisa que el contenedor esté usando la red bridge por defecto (lo más común).

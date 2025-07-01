@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: akanji_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 0322
+      MYSQL_DATABASE: akanji_db
+      MYSQL_USER: akanji
+      MYSQL_PASSWORD: akanji_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+#  ollama:
+#    image: ollama/ollama:latest
+#    container_name: ollama
+#    ports:
+#      - "11434:11434"
+#    volumes:
+#      - ollama_models:/root/.ollama
+
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./AkanjiApp/Dockerfile
+    container_name: akanji_backend
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      
+    ports:
+      - "5215:80"
+    depends_on:
+      - mysql
+#      - ollama 
+
+
+  frontend:
+    build:
+      context: ./Frontend/vuetify-akanji  # el path relativo a este docker-compose.yml
+      dockerfile: Dockerfile
+    container_name: akanji_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Frontend/vuetify-akanji:/app
+      - /app/node_modules  # evita conflictos node_modules entre host y contenedor
+    environment:
+      - NODE_ENV=development
+   
+
+volumes:
+  mysql_data:
+  ollama_models:

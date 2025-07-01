@@ -12,6 +12,7 @@ import { routes } from "vue-router/auto-routes";
 
 const protectedRoutes = [
   "/DOImanager", // esta es tu ruta protegida
+  "/ExtraerFunder",
 ];
 
 protectedRoutes.forEach((path) => {

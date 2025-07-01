@@ -239,11 +239,24 @@
                 using var content = new MultipartFormDataContent();
                 content.Add(streamContent, "file", file.FileName);
 
-                var response = await _httpClient.PostAsync($"{_zenodoApiUrl}/{depositoId}/files", content);
+                Console.WriteLine("======= CABECERAS DE LA PETICIÓN =======");
+                foreach (var header in _httpClient.DefaultRequestHeaders)
+                {
+                    Console.WriteLine($"{header.Key}: {string.Join(", ", header.Value)}");
+                }
+                Console.WriteLine("========================================");
 
+                var response = await _httpClient.PostAsync($"{_zenodoApiUrl}/{depositoId}/files", content);
+               
+               
                 var responseBody = await response.Content.ReadAsStringAsync();
                 if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"❌ Error al subir '{file.FileName}': {response.StatusCode}");
+                    Console.WriteLine($"Respuesta del servidor: {responseBody}");
                     throw new HttpRequestException($"Error al subir '{file.FileName}' ({response.StatusCode}): {responseBody}");
+                }
+               
 
                 Console.WriteLine($"✔ Archivo '{file.FileName}' subido exitosamente.");
             }
