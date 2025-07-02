@@ -56,4 +56,4 @@ services:
 
 volumes:
   mysql_data:
-  ollama_models:
+#  ollama_models:

@@ -1,13 +1,19 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
 
 export const useUserStore = defineStore("user", {
-  state: () => ({
-    token: localStorage.getItem("jwt") || null,
-  }),
+  state: () => {
+    const storedToken = localStorage.getItem("jwt");
+    // Considera inválidos "", "null", "undefined"
+    const isValidToken =
+      storedToken && storedToken !== "null" && storedToken !== "undefined";
+    return {
+      token: isValidToken ? storedToken : null,
+    };
+  },
   getters: {
     isLoggedIn: (state) => !!state.token,
   },
+
   actions: {
     setToken(token) {
       this.token = token;
